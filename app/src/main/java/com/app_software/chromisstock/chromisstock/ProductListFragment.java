@@ -107,8 +107,8 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
         }
 
         if( !TextUtils.isEmpty( noItems ) ) {
-            setEmptyText(noItems);
             setListAdapter(new ArrayAdapter(getActivity(), R.layout.product_listitem));
+            setEmptyText(noItems);
         }
 
     }
@@ -156,8 +156,6 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
                 }
             }
         }
-
-        setNewListAdaptor();
     }
 
     @Override
@@ -219,6 +217,8 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
             m_Search = savedInstanceState.getString("m_Search");
             Log.d(TAG, "onActivityCreated: Restored search " + m_Search);
         }
+
+        setNewListAdaptor();
     }
 
     /**

@@ -255,6 +255,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
             // Fire the settings activity
             Intent intent = new Intent( ctx, SettingsActivity.class);
+            intent.addFlags( intent.FLAG_ACTIVITY_NEW_TASK );
             m_Context.startActivity( intent );
 
         } else {
