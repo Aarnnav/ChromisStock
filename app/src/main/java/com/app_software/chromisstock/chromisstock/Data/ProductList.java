@@ -68,11 +68,12 @@ public class ProductList implements DownloadResultReceiver.Receiver {
             Intent intent = new Intent(Intent.ACTION_SYNC, null, m_Context , DownloadStockData.class);
 
             SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
-            String connection = SP.getString("database_url", null );
+            String connection = SP.getString("database_url", null);
             String user = SP.getString("database_user", null );
             String pwd = SP.getString("database_password", null );
+            String location = SP.getString("location", null );
 
-            DownloadStockData.startActionDownloadData(m_Context, m_Receiver, connection, user, pwd);
+            DownloadStockData.startActionDownloadData(m_Context, m_Receiver, connection, user, pwd, location);
 
         }
 

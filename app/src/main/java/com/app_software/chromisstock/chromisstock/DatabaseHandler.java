@@ -246,9 +246,10 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         m_Receiver.setReceiver(this);
 
         SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
-        String connection = SP.getString("database_url", null );
+        String connection = SP.getString("database_url", null);
         String user = SP.getString("database_user", null );
         String pwd = SP.getString("database_password", null );
+        String location = SP.getString("location", null );
 
         if( connection == null || user == null || pwd == null ) {
             showToast ("Missing connection settings", Toast.LENGTH_LONG );
@@ -259,7 +260,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
             m_Context.startActivity( intent );
 
         } else {
-            DownloadStockData.startActionDownloadData( ctx, m_Receiver, connection, user, pwd);
+            DownloadStockData.startActionDownloadData( ctx, m_Receiver, connection, user, pwd, location);
         }
 
     }

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.ResultReceiver;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.app_software.chromisstock.chromisstock.Data.StockProduct;
@@ -39,6 +40,7 @@ public class DownloadStockData extends IntentService {
     public static final String EXTRA_USERNAME = "com.app_software.chromisstock.chromisstock.extra.USERNAME";
     public static final String EXTRA_PASSWORD = "com.app_software.chromisstock.chromisstock.extra.PASSWORD";
     public static final String EXTRA_RECEIVER = "com.app_software.chromisstock.chromisstock.extra.RECEIVER";
+    public static final String EXTRA_LOCATION = "com.app_software.chromisstock.chromisstock.extra.LOCATION";
 
     public static final int STATUS_ERROR = -1;
     public static final int STATUS_RUNNING = 0;
@@ -75,13 +77,14 @@ public class DownloadStockData extends IntentService {
      * @see IntentService
      */
     // TODO: Customize helper method
-    public static void startActionDownloadData(Context context, ResultReceiver receiver, String connection, String uname, String pwd) {
+    public static void startActionDownloadData(Context context, ResultReceiver receiver, String connection, String uname, String pwd, String location) {
         Intent intent = new Intent(context, DownloadStockData.class);
         intent.setAction(ACTION_DOWNLOADDATA);
         intent.putExtra(EXTRA_CONNECTION, connection);
         intent.putExtra(EXTRA_USERNAME, uname);
         intent.putExtra(EXTRA_PASSWORD, pwd);
         intent.putExtra(EXTRA_RECEIVER, receiver);
+        intent.putExtra(EXTRA_LOCATION, location);
 
         context.startService(intent);
     }
@@ -244,6 +247,7 @@ public class DownloadStockData extends IntentService {
         final String connection = bundle.getString(EXTRA_CONNECTION);
         final String uname = bundle.getString(EXTRA_USERNAME);
         final String pwd = bundle.getString(EXTRA_PASSWORD);
+        final String location = bundle.getString(EXTRA_LOCATION);
 
         try {
             if( !Connect( connection, uname, pwd ) ) {
@@ -280,8 +284,11 @@ public class DownloadStockData extends IntentService {
                     "JOIN PRODUCTS ON STOCKCURRENT.PRODUCT = PRODUCTS.ID " +
                     "JOIN CATEGORIES ON PRODUCTS.CATEGORY = CATEGORIES.ID " +
                     "JOIN TAXCATEGORIES ON PRODUCTS.TAXCAT = TAXCATEGORIES.ID " +
-                    "LEFT OUTER JOIN STOCKLEVEL ON STOCKCURRENT.LOCATION = STOCKLEVEL.LOCATION AND STOCKCURRENT.PRODUCT = STOCKLEVEL.PRODUCT " +
-                    "GROUP BY STOCKCURRENT.LOCATION, LOCATIONS.NAME, PRODUCTS.REFERENCE, PRODUCTS.NAME, PRODUCTS.CATEGORY, CATEGORIES.NAME, " +
+                    "LEFT OUTER JOIN STOCKLEVEL ON STOCKCURRENT.LOCATION = STOCKLEVEL.LOCATION AND STOCKCURRENT.PRODUCT = STOCKLEVEL.PRODUCT ";
+            if(!TextUtils.isEmpty(location) ) {
+                query = query + "WHERE LOCATIONS.NAME = '" + location + "' ";
+            }
+            query = query + "GROUP BY STOCKCURRENT.LOCATION, LOCATIONS.NAME, PRODUCTS.REFERENCE, PRODUCTS.NAME, PRODUCTS.CATEGORY, CATEGORIES.NAME, " +
                     "PRODUCTS.PRICEBUY, PRODUCTS.PRICESELL, PRODUCTS.STOCKVOLUME, PRODUCTS.STOCKCOST, STOCKLEVEL.STOCKSECURITY, STOCKLEVEL.STOCKMAXIMUM " +
                     "ORDER BY STOCKCURRENT.LOCATION, CATEGORIES.NAME, PRODUCTS.NAME";
 
