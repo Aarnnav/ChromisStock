@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,7 +27,10 @@ import java.util.List;
 public class DownloadStockData extends IntentService {
     String TAG = "ProductList";
 
-    public static final String EXPECTED_DBVERSION ="0.31";
+    public static final int DB_UNKNOWN = 0;
+    public static final int DB_CHROMIS_UNKNOWN = 1;     // Unknown (future) Chromis database
+    public static final int DB_UNICENTA_UNKNOWN = 2;    // Unknown (future or past) UnicentaPOS database
+    public static final int DB_CHROMIS_SUPPORTED = 3;   // A supported Chromis database
 
     public static final String ACTION_TESTCONNECT = "com.app_software.chromisstock.chromisstock.action.TESTCONNECT";
     public static final String ACTION_DOWNLOADDATA = "com.app_software.chromisstock.chromisstock.action.DOWNLOADDATA";
@@ -34,13 +38,17 @@ public class DownloadStockData extends IntentService {
     public static final String EXTRA_CONNECTION = "com.app_software.chromisstock.chromisstock.extra.CONNECTION";
     public static final String EXTRA_USERNAME = "com.app_software.chromisstock.chromisstock.extra.USERNAME";
     public static final String EXTRA_PASSWORD = "com.app_software.chromisstock.chromisstock.extra.PASSWORD";
-    public static final String EXTRA_DBVERSION = "com.app_software.chromisstock.chromisstock.extra.DBVERSION";
     public static final String EXTRA_RECEIVER = "com.app_software.chromisstock.chromisstock.extra.RECEIVER";
 
     public static final int STATUS_ERROR = -1;
     public static final int STATUS_RUNNING = 0;
     public static final int STATUS_DOWNLOAD_FINISHED = 1;
     public static final int STATUS_CONNECTION_OK = 2;
+
+    private int m_dbVariant = DB_UNKNOWN;
+    public int getDBVariant() {
+        return m_dbVariant;
+    }
 
     /**
      * Starts this service to perform action TESTCONNECT with the given parameters. If
@@ -55,7 +63,6 @@ public class DownloadStockData extends IntentService {
         intent.putExtra(EXTRA_CONNECTION, connection);
         intent.putExtra(EXTRA_USERNAME, uname);
         intent.putExtra(EXTRA_PASSWORD, pwd);
-        intent.putExtra(EXTRA_DBVERSION, EXPECTED_DBVERSION );
         intent.putExtra(EXTRA_RECEIVER, receiver);
 
         context.startService(intent);
@@ -74,7 +81,6 @@ public class DownloadStockData extends IntentService {
         intent.putExtra(EXTRA_CONNECTION, connection);
         intent.putExtra(EXTRA_USERNAME, uname);
         intent.putExtra(EXTRA_PASSWORD, pwd);
-        intent.putExtra(EXTRA_DBVERSION, EXPECTED_DBVERSION );
         intent.putExtra(EXTRA_RECEIVER, receiver);
 
         context.startService(intent);
@@ -119,8 +125,9 @@ public class DownloadStockData extends IntentService {
     private Connection m_dbConn = null;
     private String m_LastError;
 
-    private boolean Connect(String connection, String uname, String pwd, String dbVer ) {
+    private boolean Connect(String connection, String uname, String pwd ) {
         boolean bResult = false;
+        String dbId = null;
         String dbVersion = null;
 
         try {
@@ -136,24 +143,41 @@ public class DownloadStockData extends IntentService {
                 Log.e(TAG, m_LastError );
             } else {
                 Statement stmt = m_dbConn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT VERSION FROM APPLICATIONS WHERE ID = 'chromispos'" );
+                ResultSet rs = stmt.executeQuery("SELECT ID, VERSION FROM APPLICATIONS" );
                 if(rs.next()) {
-                    dbVersion = rs.getString(1);
+                    dbId = rs.getString(1);
+                    dbVersion = rs.getString(2);
                 }
                 rs.close();
                 stmt.close();
 
-                if(  dbVersion == null ) {
-                    m_LastError = "Database Version not found";
-                } else {
-                    if( dbVer == null ) {
-                        bResult = true;
+                m_dbVariant = DB_UNKNOWN;
+                // Determine if we support this database version
+                if( dbId == null || dbVersion == null ) {
+                    m_LastError = "Database not recognised - No ID or VERSION in APPLICATIONS table";
+                    Log.e(TAG, m_LastError);
+                } else if( dbId.compareTo("chromispos") == 0 ) {
+                    bResult = true;
+
+                    if( dbVersion.startsWith( "0.") )
+                    {
+                        m_dbVariant = DB_CHROMIS_SUPPORTED;
                     } else {
-                        if (dbVersion.compareTo(dbVer) != 0)
-                            m_LastError = "Incorrect Database Version";
-                        else
-                            bResult = true;
+                        m_dbVariant = DB_CHROMIS_UNKNOWN;
+                        m_LastError = "Database Version " + dbId + ": " + dbVersion + " not known - we will continue but this may cause errors";
+                        Log.w(TAG, m_LastError);
                     }
+                } else if( dbId.compareTo("unicentaopos") == 0 ) {
+                    bResult = true;
+                    m_dbVariant = DB_UNICENTA_UNKNOWN;
+
+                    m_LastError = "This is a Unicentaopos database - we will continue but this may cause errors";
+                    Log.w(TAG, m_LastError);
+                }
+
+                if(   m_dbVariant == DB_UNKNOWN ) {
+                    m_LastError = "Database not recognised " + dbId + ": " + dbVersion;
+                    Log.e(TAG, m_LastError);
                 }
             }
         } catch (java.sql.SQLException e) {
@@ -197,9 +221,8 @@ public class DownloadStockData extends IntentService {
         final String connection = bundle.getString(EXTRA_CONNECTION);
         final String uname = bundle.getString(EXTRA_USERNAME);
         final String pwd = bundle.getString(EXTRA_PASSWORD);
-        final String dbv = bundle.getString(EXTRA_DBVERSION);
 
-      if( !Connect( connection, uname, pwd, dbv ) ) {
+      if( !Connect( connection, uname, pwd ) ) {
           Log.e( TAG, "handleActionTestConnect: Connection failed");
           return false;
       }
@@ -221,21 +244,23 @@ public class DownloadStockData extends IntentService {
         final String connection = bundle.getString(EXTRA_CONNECTION);
         final String uname = bundle.getString(EXTRA_USERNAME);
         final String pwd = bundle.getString(EXTRA_PASSWORD);
-        final String dbv = bundle.getString(EXTRA_DBVERSION);
 
         try {
-            if( !Connect( connection, uname, pwd, dbv ) ) {
+            if( !Connect( connection, uname, pwd ) ) {
                 Log.e(TAG, "handleActionDownloadData: Connection failed");
                 return false;
             }
 
             // Select the data from the remote DB and add to the local DB
-            DatabaseHandler dbLocal = new DatabaseHandler( this );
+            DatabaseHandler dbLocal = DatabaseHandler.getInstance(this);
 
             // Clear the database of all current data
             dbLocal.emptyTables();
 
             Statement stmt = m_dbConn.createStatement();
+
+            // In future, this is the sort of place where getDBVariant would be called to see if we need
+            // to modify the select statement to suit different versions of the database
             String query = "SELECT " +
                     "PRODUCTS.ID AS ID, " +
                     "LOCATIONS.NAME AS LOCATION, " +

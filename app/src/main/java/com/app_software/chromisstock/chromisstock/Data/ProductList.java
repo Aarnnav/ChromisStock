@@ -55,7 +55,7 @@ public class ProductList implements DownloadResultReceiver.Receiver {
     public ProductList(Context c) {
 
         m_Context = c;
-        DatabaseHandler db = new DatabaseHandler(c);
+        DatabaseHandler db = DatabaseHandler.getInstance(c);
 
         ITEMS = db.getAllProducts();
 
@@ -85,7 +85,7 @@ public class ProductList implements DownloadResultReceiver.Receiver {
 
         if( resultCode == DownloadStockData.STATUS_DOWNLOAD_FINISHED) {
 
-            DatabaseHandler db = new DatabaseHandler(m_Context);
+            DatabaseHandler db = DatabaseHandler.getInstance(m_Context);
 
             ITEMS.clear();
             ITEMS = db.getAllProducts();

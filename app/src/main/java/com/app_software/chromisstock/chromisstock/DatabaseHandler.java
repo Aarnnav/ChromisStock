@@ -36,12 +36,34 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     private Context m_Context;
     private DownloadResultReceiver m_Receiver;
-
     private Toast m_toaster;
 
     public interface DataChangeNotify {
         public void NotifyDataChanged();
     }
+
+    private static DatabaseHandler mInstance = null;
+
+    public static DatabaseHandler getInstance(Context ctx) {
+
+        // Use the application context, which will ensure that you
+        // don't accidentally leak an Activity's context.
+        // See this article for more information: http://bit.ly/6LRzfx
+        if (mInstance == null) {
+            mInstance = new DatabaseHandler(ctx.getApplicationContext());
+        }
+        return mInstance;
+    }
+
+    /**
+     * Constructor should be private to prevent direct instantiation.
+     * make call to static factory method "getInstance()" instead.
+     */
+    private DatabaseHandler(Context ctx) {
+        super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
+        m_Context = ctx;
+    }
+
 
     private List<DataChangeNotify> m_NotifyList = new ArrayList<DataChangeNotify>();
     public void addListChangeNotify(DataChangeNotify receiver) {
@@ -70,11 +92,6 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         while (iterator.hasNext()) {
             iterator.next().DownloadProgressReceiver(msg, bfinished);
         }
-    }
-
-    public DatabaseHandler(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
-        m_Context = context;
     }
 
     String[] m_ProductFields = new String [] {

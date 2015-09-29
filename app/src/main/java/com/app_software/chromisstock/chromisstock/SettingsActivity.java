@@ -202,7 +202,7 @@ public class SettingsActivity extends PreferenceActivity implements DatabaseHand
     }
 
     private void doTestConnect() {
-        DatabaseHandler db = new DatabaseHandler(getApplicationContext());
+        DatabaseHandler db = DatabaseHandler.getInstance(getApplicationContext());
         db.addDownloadProgressReceiver( this );
         db.testConnection(getApplicationContext() );
     }

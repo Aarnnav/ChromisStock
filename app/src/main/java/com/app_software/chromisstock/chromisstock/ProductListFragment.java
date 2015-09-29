@@ -44,14 +44,12 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
      * clicks.
      */
     private Callbacks mCallbacks = sCallbacks;
-    DatabaseHandler m_db;
 
     /**
      * The current activated item position. Only used on tablets.
      */
     private int mActivatedPosition = ListView.INVALID_POSITION;
 
-    private ProductListCursorAdaptor m_Adaptor;
     private String m_Search;
 
     /**
@@ -73,10 +71,8 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
     }
 
     private void setNewListAdaptor() {
-
-        if( m_db == null ) {
-            m_db = new DatabaseHandler( getActivity() );
-        }
+        ProductListCursorAdaptor adaptor = null;
+        DatabaseHandler db = DatabaseHandler.getInstance( getActivity() );
 
         String select = null;
         String [] args = null;
@@ -87,21 +83,21 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
             args = new String[]{m_Search, m_Search, partial};
         }
 
-        Cursor curs = m_db.getProductCursor( select, args, StockProduct.NAME);
+        Cursor curs = db.getProductCursor( select, args, StockProduct.NAME);
         if( curs == null ) {
             Toast.makeText( getContext(), "Database error - rebuilding", Toast.LENGTH_LONG).show();
 
-            m_db.ReBuildTables( getContext() );
+            db.ReBuildTables( getContext() );
         } else {
 
-            m_Adaptor = new ProductListCursorAdaptor(getActivity(), curs);
-            setListAdapter(m_Adaptor);
+            adaptor = new ProductListCursorAdaptor(getActivity(), curs);
+            setListAdapter(adaptor);
         }
 
         String noItems = null;
-        if( m_Adaptor == null ) {
+        if( adaptor == null ) {
             noItems = getString(R.string.no_items);
-        } else if( m_Adaptor.getCount() == 0 ) {
+        } else if( adaptor.getCount() == 0 ) {
             // Set an empty list
             if( !TextUtils.isEmpty( m_Search ) ) {
                 noItems = getString(R.string.no_match) + " " + m_Search;
@@ -111,9 +107,10 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
         }
 
         if( !TextUtils.isEmpty( noItems ) ) {
-            setEmptyText(  noItems );
+            setEmptyText(noItems);
             setListAdapter(new ArrayAdapter(getActivity(), R.layout.product_listitem));
         }
+
     }
 
     @Override
@@ -143,18 +140,6 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
         public void onItemSelected( Long id) {
         }
     };
-
-
-    public void setDatabase( DatabaseHandler db ) {
-        m_db = db;
-        m_db.addListChangeNotify(this);
-
-        setNewListAdaptor();
-    }
-
-    public DatabaseHandler getDatabase( ) {
-        return m_db;
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

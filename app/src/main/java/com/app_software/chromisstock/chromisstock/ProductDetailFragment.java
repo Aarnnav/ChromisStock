@@ -51,7 +51,7 @@ public class ProductDetailFragment extends Fragment {
 
         if (getArguments().containsKey(ARG_ITEM_ID)) {
             if( m_db == null ) {
-                m_db = new DatabaseHandler( getActivity() );
+                m_db = DatabaseHandler.getInstance( getActivity() );
             }
 
             Long id = getArguments().getLong(ARG_ITEM_ID);

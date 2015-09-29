@@ -172,7 +172,7 @@ public class ProductListActivity extends AppCompatActivity
                 doSettings();
                 return true;
             case R.id.fetch_products:
-                DatabaseHandler db = m_ListFragment.getDatabase();
+                DatabaseHandler db = DatabaseHandler.getInstance( this );
                 db.ReBuildTables(this);
                 return true;
             case R.id.send_updates:
@@ -226,7 +226,7 @@ public class ProductListActivity extends AppCompatActivity
 
            if( !TextUtils.isEmpty(code) ) {
                // is this an existing barcode ?
-               DatabaseHandler db = new DatabaseHandler(this);
+               DatabaseHandler db = DatabaseHandler.getInstance(this);
                StockProduct product = db.lookupBarcode(code);
                if (product != null) {
                    // Directly load the product details activity
