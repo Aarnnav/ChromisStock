@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 
 /**
  * An activity representing a single Product detail screen. This
@@ -15,7 +17,58 @@ import android.view.MenuItem;
  * This activity is mostly just a 'shell' activity containing nothing
  * more than a {@link ProductDetailFragment}.
  */
-public class ProductDetailActivity extends AppCompatActivity {
+public class ProductDetailActivity extends AppCompatActivity implements ChangesFragment.OnFragmentInteractionListener, DatabaseHandler.DataChangeNotify {
+
+    @Override
+    public void onDestroy() {
+
+        // No longer interested in database changes
+        DatabaseHandler db = DatabaseHandler.getInstance( this );
+        db.removeChangeNotify( this );
+
+        super.onDestroy();
+    }
+
+    private void createFragments() {
+        Long productID = getIntent().getLongExtra(ProductDetailFragment.ARG_ITEM_ID, 0);
+
+        // Create the detail fragment and add it to the activity
+        Bundle detailArgs = new Bundle();
+        detailArgs.putLong(ProductDetailFragment.ARG_ITEM_ID, productID );
+
+        ProductDetailFragment newDetail = new ProductDetailFragment();
+        newDetail.setArguments(detailArgs);
+
+        if (findViewById(R.id.product_detail_container) != null) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.product_detail_container, newDetail)
+                    .commit();
+        } else {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.product_detail_container, newDetail)
+                    .commit();
+        }
+
+        // Create the changes fragment and add it using a fragment transaction.
+        DatabaseHandler db = DatabaseHandler.getInstance( this );
+
+        Bundle changeArgs = new Bundle();
+        String product = db.getProduct( productID ).getChromisId();
+
+        changeArgs.putString(ChangesFragment.ARG_PRODUCT, product);
+        ChangesFragment newChanges = new ChangesFragment();
+        newChanges.setArguments(changeArgs);
+
+        if (findViewById(R.id.product_changes_container) != null) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.product_changes_container, newChanges)
+                    .commit();
+        } else {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.product_changes_container, newChanges)
+                    .commit();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,17 +88,12 @@ public class ProductDetailActivity extends AppCompatActivity {
         // http://developer.android.com/guide/components/fragments.html
         //
         if (savedInstanceState == null) {
-            // Create the detail fragment and add it to the activity
-            // using a fragment transaction.
-            Bundle arguments = new Bundle();
-            arguments.putLong(ProductDetailFragment.ARG_ITEM_ID,
-                    getIntent().getLongExtra(ProductDetailFragment.ARG_ITEM_ID, 0 ));
-            ProductDetailFragment fragment = new ProductDetailFragment();
-            fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.product_detail_container, fragment)
-                    .commit();
+            createFragments();
         }
+
+        // Ensure we get updates about database changes
+        DatabaseHandler db = DatabaseHandler.getInstance( this );
+        db.addChangeNotify(this);
     }
 
     @Override
@@ -63,5 +111,16 @@ public class ProductDetailActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onFragmentInteraction(Long product) {
+
+    }
+
+    @Override
+    public void NotifyDataChanged() {
+        // Need to recreate the fragments to force a redraw
+        createFragments();
     }
 }

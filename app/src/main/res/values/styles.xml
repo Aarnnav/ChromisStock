@@ -2,7 +2,9 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light">
-        <!-- Customize your theme here. -->
+
     </style>
+
+    <color name="changedlistitemcolour">#CC0066</color>
 
 </resources>

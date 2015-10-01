@@ -41,10 +41,6 @@ public class ProductListActivity extends AppCompatActivity
 
     private static String TAG = "ProductListActivity";
 
-    public ProductListActivity() {
-        Log.v( TAG, "New ProductListActivity");
-    }
-
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
@@ -112,6 +108,7 @@ public class ProductListActivity extends AppCompatActivity
             // 'activated' state when touched.
             m_ListFragment.setActivateOnItemClick(true);
         }
+
     }
 
     @Override
@@ -173,7 +170,7 @@ public class ProductListActivity extends AppCompatActivity
                 return true;
             case R.id.fetch_products:
                 DatabaseHandler db = DatabaseHandler.getInstance( this );
-                db.ReBuildTables(this);
+                db.ReBuildProductTable(this);
                 return true;
             case R.id.send_updates:
                 Toast.makeText( this, "Not yet implementated", Toast.LENGTH_SHORT ).show();

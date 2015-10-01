@@ -2,7 +2,9 @@ package com.app_software.chromisstock.chromisstock;
 
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,8 +18,11 @@ import com.app_software.chromisstock.chromisstock.Data.StockProduct;
  */
 public class ProductListCursorAdaptor extends CursorAdapter {
 
+        Context m_Context;
+
         public ProductListCursorAdaptor(Context context, Cursor cursor ) {
             super(context, cursor, 0);
+            m_Context = context;
         }
 
         // The newView method is used to inflate a new view and return it,
@@ -34,11 +39,26 @@ public class ProductListCursorAdaptor extends CursorAdapter {
             // Find fields to populate in inflated template
             TextView tvID = (TextView) view.findViewById(R.id.tvID);
             TextView tvName = (TextView) view.findViewById(R.id.tvName);
+
             // Extract properties from cursor
-            String id = cursor.getString(cursor.getColumnIndexOrThrow(StockProduct.REFERENCE));
-            String name = cursor.getString(cursor.getColumnIndexOrThrow(StockProduct.NAME));
-            // Populate fields with extracted properties
-            tvID.setText(id);
-            tvName.setText(name);
+            Long id = cursor.getLong(cursor.getColumnIndexOrThrow(StockProduct.ID));
+
+            // get the rest from the database
+            DatabaseHandler db = DatabaseHandler.getInstance(m_Context);
+            StockProduct product = db.getProduct(id);
+
+            if( product == null ) {
+                tvName.setText( "DATABASE READ ERROR");
+            } else {
+                // Populate fields with extracted properties
+                tvID.setText( product.getValueString(StockProduct.REFERENCE));
+                tvName.setText(product.getValueString(StockProduct.NAME));
+
+                if( product.getValueBoolean( StockProduct.HASCHANGES ) ) {
+                    int c = m_Context.getResources().getColor(R.color.changedlistitemcolour);
+                    tvID.setTextColor( c );
+                    tvName.setTextColor( c );
+                }
+            }
         }
     }

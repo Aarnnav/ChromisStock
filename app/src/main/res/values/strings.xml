@@ -2,6 +2,7 @@
     <string name="app_name">Chromis Stock</string>
     <string name="title_product_detail">Product Detail</string>
     <string name="SearchPrompt">Search</string>
+    <string name="label_productname">Name:</string>
     <string name="label_reference">Ref:</string>
     <string name="label_barcode">Code:</string>
     <string name="label_instock">Stock:</string>
@@ -23,5 +24,18 @@
     <string name="dbstatus_connection_ok">Database connection OK</string>
     <string name="dbstatus_communication_error">Database communication error</string>
     <string name="dbstatus_coomunicating">Communicating with database...</string>
+    <string name="label_adjuststock">+ / -</string>
+
+    <string name="changetype_none">No Change</string>
+    <string name="changetype_adjustvalue">Adjust by</string>
+    <string name="changetype_changevalue">Change to</string>
+    <string name="changetype_newvalue">New value</string>
+    <string name="label_increase_by">Increase by</string>
+    <string name="label_decrease_by">Decrease by</string>
+    <string name="label_set_value">Set New Value</string>
+    <string name="label_ok">OK</string>
+    <string name="label_cancel">Cancel</string>
+    <string name="label_changes">Changes</string>
+
 
 </resources>

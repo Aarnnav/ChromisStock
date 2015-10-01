@@ -6,9 +6,7 @@ import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -26,7 +24,7 @@ import com.app_software.chromisstock.chromisstock.Data.StockProduct;
  * Activities containing this fragment MUST implement the {@link Callbacks}
  * interface.
  */
-public class ProductListFragment extends ListFragment implements DatabaseHandler.DataChangeNotify
+public class ProductListFragment extends ListFragment implements  DatabaseHandler.DataChangeNotify
 {
 
     private static String TAG = "ProductListFragment";
@@ -79,15 +77,15 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
         String partial = "%" + m_Search + "%";
 
         if ( !TextUtils.isEmpty( m_Search ) ) {
-            select =  StockProduct.BARCODE + " = ? OR " + StockProduct.CHROMISID + " = ? OR " + StockProduct.NAME + " LIKE ?";
-            args = new String[]{m_Search, m_Search, partial};
+            select =  StockProduct.BARCODE + " = ? OR " + StockProduct.REFERENCE + " LIKE ? OR " + StockProduct.NAME + " LIKE ?";
+            args = new String[]{m_Search, partial, partial};
         }
 
-        Cursor curs = db.getProductCursor( select, args, StockProduct.NAME);
+        Cursor curs = db.getProductListCursor(select, args, StockProduct.NAME);
         if( curs == null ) {
             Toast.makeText( getContext(), "Database error - rebuilding", Toast.LENGTH_LONG).show();
 
-            db.ReBuildTables( getContext() );
+            db.ReBuildProductTable(getContext());
         } else {
 
             adaptor = new ProductListCursorAdaptor(getActivity(), curs);
@@ -115,7 +113,8 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
 
     @Override
     public void NotifyDataChanged() {
-        // Database contents have changed
+
+        // Recreate list if databse changed
         setNewListAdaptor();
     }
 
@@ -142,6 +141,16 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
     };
 
     @Override
+    public void onDestroy() {
+        // No longer interested in database changes
+        DatabaseHandler db = DatabaseHandler.getInstance( getActivity() );
+        db.removeChangeNotify( this );
+
+        super.onDestroy();
+    }
+
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -156,6 +165,10 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
                 }
             }
         }
+
+        // We are interested in database changes
+        DatabaseHandler db = DatabaseHandler.getInstance( getActivity() );
+        db.addChangeNotify(this);
     }
 
     @Override
@@ -167,6 +180,7 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
                 && savedInstanceState.containsKey(STATE_ACTIVATED_POSITION)) {
             setActivatedPosition(savedInstanceState.getInt(STATE_ACTIVATED_POSITION));
         }
+
     }
 
     @Override
@@ -226,11 +240,13 @@ public class ProductListFragment extends ListFragment implements DatabaseHandler
      * given the 'activated' state when touched.
      */
     public void setActivateOnItemClick(boolean activateOnItemClick) {
-        // When setting CHOICE_MODE_SINGLE, ListView will automatically
-        // give items the 'activated' state when touched.
-        getListView().setChoiceMode(activateOnItemClick
-                ? ListView.CHOICE_MODE_SINGLE
-                : ListView.CHOICE_MODE_NONE);
+        if( getListAdapter() != null ) {
+            // When setting CHOICE_MODE_SINGLE, ListView will automatically
+            // give items the 'activated' state when touched.
+            getListView().setChoiceMode(activateOnItemClick
+                    ? ListView.CHOICE_MODE_SINGLE
+                    : ListView.CHOICE_MODE_NONE);
+        }
     }
 
     private void setActivatedPosition(int position) {

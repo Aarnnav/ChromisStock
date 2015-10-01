@@ -258,8 +258,8 @@ public class DownloadStockData extends IntentService {
             // Select the data from the remote DB and add to the local DB
             DatabaseHandler dbLocal = DatabaseHandler.getInstance(this);
 
-            // Clear the database of all current data
-            dbLocal.emptyTables();
+            // Clear the database of all current product data
+            dbLocal.emptyProductTable();
 
             Statement stmt = m_dbConn.createStatement();
 
@@ -311,7 +311,7 @@ public class DownloadStockData extends IntentService {
                 values.putDouble(StockProduct.QTY_INSTOCK, rs.getDouble(index++));
                 values.putDouble(StockProduct.QTY_MIN,rs.getDouble(index++));
                 values.putDouble(StockProduct.QTY_MAX, rs.getDouble(index++));
-                dbLocal.addProduct( new StockProduct( values ) );
+                dbLocal.addProduct( new StockProduct( values ), true, true );
 
                 if( --ticker == 0 ) {
                     // Send keep alive messages to caller

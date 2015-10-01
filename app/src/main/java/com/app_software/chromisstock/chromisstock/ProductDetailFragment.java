@@ -1,6 +1,5 @@
 package com.app_software.chromisstock.chromisstock;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -12,7 +11,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.app_software.chromisstock.chromisstock.Data.ProductList;
 import com.app_software.chromisstock.chromisstock.Data.StockProduct;
 
 /**
@@ -33,6 +31,7 @@ public class ProductDetailFragment extends Fragment {
      */
     private StockProduct mItem;
     private DatabaseHandler m_db;
+
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -56,6 +55,7 @@ public class ProductDetailFragment extends Fragment {
 
             Long id = getArguments().getLong(ARG_ITEM_ID);
             mItem = m_db.getProduct( id );
+            m_db.applyChanges( mItem );
         }
     }
 
@@ -83,6 +83,130 @@ public class ProductDetailFragment extends Fragment {
             }
         }
 
+        rootView.findViewById(R.id.ibAddStock).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+
+        rootView.findViewById(R.id.edit_instock).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+        rootView.findViewById(R.id.edit_name).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            }
+        });
+        rootView.findViewById(R.id.edit_reference).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+        rootView.findViewById(R.id.edit_barcode).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+        rootView.findViewById(R.id.edit_minqty).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+        rootView.findViewById(R.id.edit_maxqty).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+        rootView.findViewById(R.id.edit_pricebuy).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+        rootView.findViewById(R.id.edit_pricesell).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onEditItem(v);
+            } } );
+
         return rootView;
     }
+
+    private void onEditItem( View v ) {
+        Bundle args = new Bundle();
+        boolean bDoDialog = true;
+
+        switch( v.getId() ) {
+            case R.id.ibAddStock:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.QTY_INSTOCK);
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_instock));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_ADJUSTVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, "0" );
+            break;
+
+            case R.id.edit_instock:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.QTY_INSTOCK);
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_instock));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, String.format("%.0f", mItem.getValueDouble(StockProduct.QTY_INSTOCK)));
+                break;
+
+            case R.id.edit_name:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.NAME );
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_productname));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, mItem.getValueString(StockProduct.NAME));
+                break;
+
+            case R.id.edit_reference:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.REFERENCE );
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_reference));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, mItem.getValueString(StockProduct.REFERENCE));
+                break;
+
+            case R.id.edit_barcode:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.BARCODE );
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_barcode));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, mItem.getValueString(StockProduct.BARCODE));
+                break;
+
+            case R.id.edit_minqty:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.QTY_MIN );
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_minqty));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, String.format("%.0f", mItem.getValueDouble(StockProduct.QTY_MIN)));
+                break;
+
+            case R.id.edit_maxqty:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.QTY_MAX );
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_maxqty));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, String.format("%.0f", mItem.getValueDouble(StockProduct.QTY_MAX)));
+                break;
+
+            case R.id.edit_pricebuy:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.BUYPRICE );
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_pricebuy));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, String.format("%.2f", mItem.getValueDouble(StockProduct.BUYPRICE)));
+                break;
+
+            case R.id.edit_pricesell:
+                args.putString(StockChangeDialog.ARG_FIELD, StockProduct.SELLPRICE );
+                args.putString(StockChangeDialog.ARG_FIELD_LABEL, getResources().getString(R.string.label_pricesell));
+                args.putInt(StockChangeDialog.ARG_CHANGETYPE, DatabaseHandler.CHANGETYPE_CHANGEVALUE);
+                args.putString(StockChangeDialog.ARG_VALUE, String.format("%.2f", mItem.getValueDouble(StockProduct.SELLPRICE)));
+                break;
+
+            default:
+                bDoDialog = false;
+                break;
+        }
+
+        if( bDoDialog ) {
+            // Create an instance of the change dialog fragment and show it
+            StockChangeDialog dialog = new StockChangeDialog();
+
+            args.putLong(StockChangeDialog.ARG_PRODUCTID, mItem.getID());
+
+            dialog.setArguments(args);
+            dialog.show(getFragmentManager(), "StockChangeDialog");
+        }
+    }
+
 }

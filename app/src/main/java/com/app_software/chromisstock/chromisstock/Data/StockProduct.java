@@ -1,6 +1,9 @@
 package com.app_software.chromisstock.chromisstock.Data;
 
+import android.database.Cursor;
 import android.os.Bundle;
+
+import com.app_software.chromisstock.chromisstock.DatabaseHandler;
 
 import java.util.UUID;
 
@@ -22,6 +25,10 @@ public class StockProduct {
     public static final String QTY_MAX = "QTY_MAX";
     public static final String QTY_MIN = "QTY_MIN";
     public static final String IMAGE = "IMAGE";
+
+    // This field is created on the fly when creating a StockProduct Object
+    // it is not in the database it is set if CHANGE records exist for this product
+    public static final String HASCHANGES = "HASCHANGES";
 
     Bundle m_Values;
 
@@ -48,6 +55,11 @@ public class StockProduct {
         return m_Values.getDouble(key);
     }
 
+    public Boolean getValueBoolean( String key ) {
+
+        return m_Values.getBoolean(key);
+    }
+
     public byte [] getValueByteArray( String key ) {
 
         return m_Values.getByteArray(key);
@@ -72,7 +84,7 @@ public class StockProduct {
     }
 
     public Long getID() {
-        Long id = m_Values.getLong( ID );
+        Long id = m_Values.getLong(ID);
 
         return id;
     }
