@@ -67,7 +67,7 @@ public class ProductListActivity extends AppCompatActivity
 
         // Restore state
         if (savedInstanceState != null) {
-//            m_ListFragment = (ProductListFragment) getSupportFragmentManager().getFragment( savedInstanceState, "m_ListFragment");
+           m_ListFragment = (ProductListFragment) getSupportFragmentManager().getFragment( savedInstanceState, "m_ListFragment");
         } else {
 
             // If our layout has a container for the image selector fragment,
@@ -78,7 +78,7 @@ public class ProductListActivity extends AppCompatActivity
 
                 Intent i = getIntent();
                 if( i != null ) {
-                    if (i.ACTION_SEARCH.equals(i.getAction())) {
+                    if (Intent.ACTION_SEARCH.equals(i.getAction())) {
                         String search =  i.getStringExtra(SearchManager.QUERY);
                         args.putString( ProductListFragment.ARG_SEARCH, search );
                     }
@@ -115,18 +115,12 @@ public class ProductListActivity extends AppCompatActivity
     public void onNewIntent(Intent intent) {  //calls twice
         super.onNewIntent(intent);
         Log.v(TAG, "onNewIntent");
-        if (intent.ACTION_SEARCH.equals(intent.getAction())) {
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String search =  intent.getStringExtra(SearchManager.QUERY);
             Log.v(TAG, "Searching for: " + search);
 
             m_ListFragment.setSearch(  search  );
         }
-    }
-
-    private MenuItem m_searchMenuItem;
-
-    public MenuItem getSearchMenuItem() {
-        return m_searchMenuItem;
     }
 
     @Override
@@ -141,8 +135,6 @@ public class ProductListActivity extends AppCompatActivity
                 (SearchView) menu.findItem(R.id.product_search).getActionView();
         searchView.setSearchableInfo(
                 searchManager.getSearchableInfo(getComponentName()));
-
-        m_searchMenuItem = menu.findItem(R.id.product_search);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -233,7 +225,7 @@ public class ProductListActivity extends AppCompatActivity
                    Log.v( TAG, "Barcode not in system, starting search");
                    Intent i = new Intent(this, ProductListActivity.class);
                    i.putExtra(SearchManager.QUERY, code);
-                   i.setAction( i.ACTION_SEARCH );
+                   i.setAction( Intent.ACTION_SEARCH );
                    startActivity(i);
                }
            }
