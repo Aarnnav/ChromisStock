@@ -44,10 +44,17 @@ public class SettingsActivity extends PreferenceActivity implements DatabaseHand
      */
     private static final boolean ALWAYS_SIMPLE_PREFS = false;
 
+    private  List<DatabaseHandler.Location> m_Locations;
+    private static Boolean m_bDBChanged;
+    private static Preference m_PrefDbURL;
+    private static Preference m_PrefDbUser;
+    private static Preference m_PrefDbPassword;
+    private static Preference m_PrefDbLocation;
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+        m_bDBChanged = false;
 
         setupSimplePreferencesScreen();
     }
@@ -68,13 +75,21 @@ public class SettingsActivity extends PreferenceActivity implements DatabaseHand
         // Add 'general' preferences.
         addPreferencesFromResource(R.xml.pref_general);
 
-        bindPreferenceSummaryToValue(findPreference("database_url"));
-        bindPreferenceSummaryToValue(findPreference("database_user"));
-//        bindPreferenceSummaryToValue(findPreference("database_password"));
-        bindPreferenceSummaryToValue(findPreference("chromis_user"));
-        bindPreferenceSummaryToValue(findPreference("location"));
+        // If we have a valid DB connection we may already have location information
+        addLocations();
 
-        Preference button = (Preference)findPreference("test_connect");
+        m_PrefDbURL = findPreference("database_url");
+        m_PrefDbUser = findPreference("database_user");
+        m_PrefDbPassword = findPreference("database_password");
+        m_PrefDbLocation = findPreference("location");
+
+        bindPreferenceSummaryToValue(m_PrefDbURL);
+        bindPreferenceSummaryToValue(m_PrefDbUser);
+//        bindPreferenceSummaryToValue(m_PrefDbPassword);
+        bindPreferenceSummaryToValue(m_PrefDbLocation);
+        bindPreferenceSummaryToValue(findPreference("chromis_user"));
+
+        Preference button = (Preference) findPreference("test_connect");
         button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
@@ -82,6 +97,9 @@ public class SettingsActivity extends PreferenceActivity implements DatabaseHand
                 return true;
             }
         });
+
+        m_bDBChanged = false;
+
     }
 
     /**
@@ -151,6 +169,12 @@ public class SettingsActivity extends PreferenceActivity implements DatabaseHand
                 // simple string representation.
                 preference.setSummary(stringValue);
             }
+
+            if( preference.compareTo( m_PrefDbURL ) == 0 || preference.compareTo( m_PrefDbUser ) == 0 ||
+                    preference.compareTo( m_PrefDbPassword ) == 0 || preference.compareTo( m_PrefDbLocation ) == 0 ) {
+                m_bDBChanged = true;
+            }
+
             return true;
         }
     };
@@ -183,6 +207,7 @@ public class SettingsActivity extends PreferenceActivity implements DatabaseHand
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class GeneralPreferenceFragment extends PreferenceFragment {
+
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -193,25 +218,61 @@ public class SettingsActivity extends PreferenceActivity implements DatabaseHand
             bindPreferenceSummaryToValue(findPreference("database_password"));
             bindPreferenceSummaryToValue(findPreference("chromis_user"));
             bindPreferenceSummaryToValue(findPreference("location"));
+
+        }
+    }
+
+    private void addLocations() {
+
+        ListPreference location = (ListPreference) findPreference("location");
+
+        DatabaseHandler db = DatabaseHandler.getInstance(getApplicationContext());
+        m_Locations = db.getLocations();
+        if( m_Locations != null && m_Locations.size() > 0 ) {
+            String[] options = new String[m_Locations.size()];
+            String[] optionvalues = new String[m_Locations.size()];
+            for (int i = 0; i < m_Locations.size(); ++i) {
+                options[i] = m_Locations.get(i).Name;
+                optionvalues[i] = m_Locations.get(i).ChromisId;
+            }
+            location.setEntryValues( optionvalues );
+            location.setEntries(options);
+        } else {
+            String[] options = new String[1];
+            options[0] = "Default Location";
+            String[] optionvalues = new String[1];
+            optionvalues[0] = "0";
+            location.setEntryValues( optionvalues );
+            location.setEntries(options );
         }
     }
 
     @Override
     public void DownloadProgressReceiver(String Msg, boolean bFinished) {
-            findPreference("test_connect").setSummary( Msg );
+        findPreference("test_connect").setSummary( Msg );
+
+        if( bFinished ) {
+            addLocations();
+        }
     }
 
     private void doTestConnect() {
         DatabaseHandler db = DatabaseHandler.getInstance(getApplicationContext());
         db.addDownloadProgressReceiver( this );
-        db.testConnection(getApplicationContext() );
+        db.testConnection(getApplicationContext());
+    }
+
+    private void ClearDatabase() {
+        DatabaseHandler db = DatabaseHandler.getInstance( getApplicationContext() );
+        db.ReBuildProductTable(getApplicationContext());
     }
 
     private void askTestConnect() {
 
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
-        alert.setTitle("Testing Connection");
-        alert.setMessage("This may take a long time. Messages will be displayed showing progress");
+
+        alert.setTitle(getResources().getString(R.string.dlg_connect_title));
+        alert.setMessage(  getResources().getString(R.string.dlg_connect_message) );
 
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {

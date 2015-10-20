@@ -2,9 +2,11 @@ package com.app_software.chromisstock.chromisstock;
 
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.text.TextUtils;
@@ -119,7 +121,7 @@ public class ProductListActivity extends AppCompatActivity
             String search =  intent.getStringExtra(SearchManager.QUERY);
             Log.v(TAG, "Searching for: " + search);
 
-            m_ListFragment.setSearch(  search  );
+            m_ListFragment.setSearch(search);
         }
     }
 
@@ -145,7 +147,7 @@ public class ProductListActivity extends AppCompatActivity
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                 m_ListFragment.setSearch((newText));
+                m_ListFragment.setSearch((newText));
                 return true;
             }
         });
@@ -160,12 +162,18 @@ public class ProductListActivity extends AppCompatActivity
             case R.id.settings:
                 doSettings();
                 return true;
+            case R.id.new_product:
+                Long id = DatabaseHandler.getInstance( this ).createProduct();
+                onItemSelected(id);
+                return true;
             case R.id.fetch_products:
-                DatabaseHandler db = DatabaseHandler.getInstance( this );
-                db.ReBuildProductTable(this);
+                DatabaseHandler.getInstance( this ).ReBuildProductTable(this);
                 return true;
             case R.id.send_updates:
                 Toast.makeText( this, "Not yet implementated", Toast.LENGTH_SHORT ).show();
+                return true;
+            case R.id.discard_updates:
+                askResetData();
                 return true;
             case R.id.use_scanner:
                 ScannerIntegrator scanner = new ScannerIntegrator(this);
@@ -179,6 +187,28 @@ public class ProductListActivity extends AppCompatActivity
     private void doSettings() {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
+    }
+
+    private void askResetData() {
+
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setTitle(getResources().getString(R.string.dlg_reset_title));
+        alert.setMessage(  getResources().getString(R.string.dlg_reset_message) );
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                DatabaseHandler.getInstance( getApplicationContext() ).emptyTables();
+            }
+        });
+
+        alert.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                });
+
+        alert.show();
+
     }
 
     /**

@@ -11,7 +11,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.app_software.chromisstock.chromisstock.Data.ProductList;
 import com.app_software.chromisstock.chromisstock.Data.StockProduct;
 
 
@@ -77,11 +76,11 @@ public class ProductListFragment extends ListFragment implements  DatabaseHandle
         String partial = "%" + m_Search + "%";
 
         if ( !TextUtils.isEmpty( m_Search ) ) {
-            select =  StockProduct.BARCODE + " = ? OR " + StockProduct.REFERENCE + " LIKE ? OR " + StockProduct.NAME + " LIKE ?";
+            select =  StockProduct.CODE + " = ? OR " + StockProduct.REFERENCE + " LIKE ? OR " + StockProduct.NAME + " LIKE ?";
             args = new String[]{m_Search, partial, partial};
         }
 
-        Cursor curs = db.getProductListCursor(select, args, StockProduct.NAME);
+        Cursor curs = db.getProductListCursor(select, args, StockProduct.HASCHANGES + " DESC," + StockProduct.NAME);
         if( curs == null ) {
             Toast.makeText( getContext(), "Database error - rebuilding", Toast.LENGTH_LONG).show();
 
@@ -100,7 +99,11 @@ public class ProductListFragment extends ListFragment implements  DatabaseHandle
             if( !TextUtils.isEmpty( m_Search ) ) {
                 noItems = getString(R.string.no_match) + " " + m_Search;
             } else {
-                noItems = getString(R.string.no_items);
+                if( db.isFetchingData()) {
+                    noItems = getString(R.string.fetching_data);
+                } else {
+                    noItems = getString(R.string.no_items);
+                }
             }
         }
 
@@ -112,9 +115,9 @@ public class ProductListFragment extends ListFragment implements  DatabaseHandle
     }
 
     @Override
-    public void NotifyDataChanged() {
+    public void NotifyDataChanged( int action,  String chromisID ) {
 
-        // Recreate list if databse changed
+        // Recreate list if database changed
         setNewListAdaptor();
     }
 

@@ -17,6 +17,12 @@
         chromisstock:showAsAction="ifRoom"
         android:icon="@mipmap/ic_barcode" >
     </item>
+
+    <item android:id="@+id/new_product"
+        android:title="@string/menu_new_product"
+        android:icon="@mipmap/ic_system_update_alt_black_24dp" >
+    </item>
+
     <item android:id="@+id/fetch_products"
         android:title="@string/menu_fetch_products"
         android:icon="@mipmap/ic_system_update_alt_black_24dp" >
@@ -24,6 +30,11 @@
 
     <item android:id="@+id/send_updates"
         android:title="@string/menu_send_updates"
+        android:icon="@mipmap/ic_autorenew_black_24dp" >
+    </item>
+
+    <item android:id="@+id/discard_updates"
+        android:title="@string/menu_discard_updates"
         android:icon="@mipmap/ic_autorenew_black_24dp" >
     </item>
 

@@ -38,7 +38,7 @@
         android:maxLines="1" />
 
 
-    <EditTextPreference
+    <ListPreference
         android:key="location"
         android:title="@string/pref_title_location"
         android:defaultValue="@string/pref_default_location"

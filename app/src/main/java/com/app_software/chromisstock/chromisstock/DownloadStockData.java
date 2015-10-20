@@ -26,7 +26,7 @@ import java.util.List;
  * helper methods.
  */
 public class DownloadStockData extends IntentService {
-    String TAG = "ProductList";
+    String TAG = "DownloadStockData";
 
     public static final int DB_UNKNOWN = 0;
     public static final int DB_CHROMIS_UNKNOWN = 1;     // Unknown (future) Chromis database
@@ -249,14 +249,162 @@ public class DownloadStockData extends IntentService {
         final String pwd = bundle.getString(EXTRA_PASSWORD);
         final String location = bundle.getString(EXTRA_LOCATION);
 
-        try {
-            if( !Connect( connection, uname, pwd ) ) {
-                Log.e(TAG, "handleActionDownloadData: Connection failed");
-                return false;
+        if (!Connect(connection, uname, pwd)) {
+            Log.e(TAG, "handleActionDownloadData: Connection failed");
+            return false;
+        }
+
+        // Select the data from the remote DB and add to the local DB
+        DatabaseHandler dbLocal = DatabaseHandler.getInstance(this);
+
+        if( DownloadLocations(dbLocal, bundle, receiver) &&
+                DownloadTaxes( dbLocal, bundle, receiver ) &&
+                DownloadCategories( dbLocal, bundle, receiver ) &&
+                DownloadProducts(dbLocal, location, bundle, receiver) ) {
+                bResult = true;
             }
 
-            // Select the data from the remote DB and add to the local DB
-            DatabaseHandler dbLocal = DatabaseHandler.getInstance(this);
+
+        Log.v(TAG, "handleActionDownloadData: Download completed");
+
+        CloseConnection();
+
+        return bResult;
+    }
+
+    /**
+     * Download the locations
+     */
+    private boolean DownloadLocations( DatabaseHandler dbLocal,  Bundle bundle, ResultReceiver receiver ) {
+        boolean bResult = false;
+
+        try {
+
+            Log.v(TAG, "DownloadLocations: Download Started");
+
+            receiver.send(STATUS_RUNNING, bundle);
+
+            // Clear the database of all current location data
+            dbLocal.emptyLocationTable();
+
+            Statement stmt = m_dbConn.createStatement();
+
+            // In future, this is the sort of place where getDBVariant would be called to see if we need
+            // to modify the select statement to suit different versions of the database
+            String query = "SELECT ID, NAME FROM LOCATIONS";
+
+            ResultSet rs = stmt.executeQuery(query);
+
+            while(rs.next()) {
+                Bundle values = new Bundle();
+
+                dbLocal.addLocation( rs.getString(1),  rs.getString(2) );
+            }
+            rs.close();
+            stmt.close();
+            bResult = true;
+
+            Log.v(TAG, "DownloadLocations: Download Complete");
+
+        } catch (java.sql.SQLException e) {
+            m_LastError =  Log.getStackTraceString(e);
+            Log.e(TAG, m_LastError);
+        }
+
+        return bResult;
+    }
+
+    /**
+     * Download the tax categories
+     */
+    private boolean DownloadTaxes( DatabaseHandler dbLocal,  Bundle bundle, ResultReceiver receiver ) {
+        boolean bResult = false;
+
+        try {
+            Log.v(TAG, "DownloadTaxes: Download Started");
+
+            receiver.send(STATUS_RUNNING, bundle);
+
+            // Clear the database of all current tax data
+            dbLocal.emptyTaxesTable();
+
+            Statement stmt = m_dbConn.createStatement();
+
+            String query = "SELECT ID, NAME FROM TAXCATEGORIES";
+
+            ResultSet rs = stmt.executeQuery(query);
+
+            while(rs.next()) {
+                Bundle values = new Bundle();
+
+                dbLocal.addTax( rs.getString(1),  rs.getString(2) );
+            }
+            rs.close();
+            stmt.close();
+            bResult = true;
+
+            Log.v(TAG, "DownloadTaxes: Download Complete");
+
+        } catch (java.sql.SQLException e) {
+            m_LastError =  Log.getStackTraceString(e);
+            Log.e(TAG, m_LastError);
+        }
+
+        return bResult;
+    }
+
+    /**
+     * Download the locations
+     */
+    private boolean DownloadCategories( DatabaseHandler dbLocal,  Bundle bundle, ResultReceiver receiver ) {
+        boolean bResult = false;
+
+        try {
+
+            Log.v(TAG, "DownloadCategories: Download Started");
+
+            receiver.send(STATUS_RUNNING, bundle);
+
+            // Clear the database of all current categories
+            dbLocal.emptyCategoryTable();
+
+            Statement stmt = m_dbConn.createStatement();
+
+            // In future, this is the sort of place where getDBVariant would be called to see if we need
+            // to modify the select statement to suit different versions of the database
+            String query = "SELECT ID, NAME FROM CATEGORIES";
+
+            ResultSet rs = stmt.executeQuery(query);
+
+            while(rs.next()) {
+                Bundle values = new Bundle();
+
+                dbLocal.addCategory( rs.getString(1),  rs.getString(2) );
+            }
+            rs.close();
+            stmt.close();
+            bResult = true;
+
+            Log.v(TAG, "DownloadCategories: Download Complete");
+
+        } catch (java.sql.SQLException e) {
+            m_LastError =  Log.getStackTraceString(e);
+            Log.e(TAG, m_LastError);
+        }
+
+        return bResult;
+    }
+
+    /**
+     * Download the product table for a location
+     */
+    private boolean DownloadProducts( DatabaseHandler dbLocal,  String location, Bundle bundle, ResultReceiver receiver ) {
+        boolean bResult = false;
+
+        try {
+            Log.v(TAG, "DownloadProducts: Download Started");
+
+            receiver.send(STATUS_RUNNING, bundle);
 
             // Clear the database of all current product data
             dbLocal.emptyProductTable();
@@ -266,36 +414,32 @@ public class DownloadStockData extends IntentService {
             // In future, this is the sort of place where getDBVariant would be called to see if we need
             // to modify the select statement to suit different versions of the database
             String query = "SELECT " +
-                    "PRODUCTS.ID AS ID, " +
-                    "LOCATIONS.NAME AS LOCATION, " +
-                    "PRODUCTS.REFERENCE AS REFERENCE, " +
-                    "PRODUCTS.NAME AS NAME, " +
-                    "CATEGORIES.NAME AS CATEGORY, " +
-                    "PRODUCTS.CODE AS BARCODE, " +
-                    "PRODUCTS.PRICEBUY AS BUYPRICE, " +
-                    "PRODUCTS.PRICESELL AS SELLPRICE, " +
-                    "TAXCATEGORIES.NAME AS TAXCODE, "+
-                    "PRODUCTS.IMAGE AS IMAGE, " +
+                    "PRODUCTS.ID AS ID, STOCKLEVEL.LOCATION AS LOCATION, REFERENCE, NAME, CATEGORY, " +
+                    "CODE, PRICEBUY, PRICESELL, TAXCAT, IMAGE, " +
                     "SUM(STOCKCURRENT.UNITS) AS INSTOCK, " +
                     "COALESCE(STOCKLEVEL.STOCKSECURITY, 0) AS STOCKMINIMUM, " +
                     "COALESCE(STOCKLEVEL.STOCKMAXIMUM, 0) AS STOCKMAXIMUM " +
-                    "FROM STOCKCURRENT " +
-                    "JOIN LOCATIONS ON STOCKCURRENT.LOCATION = LOCATIONS.ID " +
-                    "JOIN PRODUCTS ON STOCKCURRENT.PRODUCT = PRODUCTS.ID " +
-                    "JOIN CATEGORIES ON PRODUCTS.CATEGORY = CATEGORIES.ID " +
-                    "JOIN TAXCATEGORIES ON PRODUCTS.TAXCAT = TAXCATEGORIES.ID " +
+                    "FROM PRODUCTS " +
+                    "JOIN STOCKCURRENT ON STOCKCURRENT.PRODUCT = PRODUCTS.ID " +
                     "LEFT OUTER JOIN STOCKLEVEL ON STOCKCURRENT.LOCATION = STOCKLEVEL.LOCATION AND STOCKCURRENT.PRODUCT = STOCKLEVEL.PRODUCT ";
             if(!TextUtils.isEmpty(location) ) {
-                query = query + "WHERE LOCATIONS.NAME = '" + location + "' ";
+                query = query + "WHERE STOCKCURRENT.LOCATION = '" + location + "' ";
             }
-            query = query + "GROUP BY STOCKCURRENT.LOCATION, LOCATIONS.NAME, PRODUCTS.REFERENCE, PRODUCTS.NAME, PRODUCTS.CATEGORY, CATEGORIES.NAME, " +
-                    "PRODUCTS.PRICEBUY, PRODUCTS.PRICESELL, PRODUCTS.STOCKVOLUME, PRODUCTS.STOCKCOST, STOCKLEVEL.STOCKSECURITY, STOCKLEVEL.STOCKMAXIMUM " +
-                    "ORDER BY STOCKCURRENT.LOCATION, CATEGORIES.NAME, PRODUCTS.NAME";
+            query = query + "GROUP BY NAME, CATEGORY, PRICEBUY, PRICESELL, STOCKLEVEL.STOCKSECURITY, STOCKLEVEL.STOCKMAXIMUM " +
+                    "ORDER BY NAME";
 
-            ResultSet rs = stmt.executeQuery( query );
-            int ticker = 500;
+            receiver.send(STATUS_RUNNING, bundle);
+
+            ResultSet rs = stmt.executeQuery(query);
+            int ticker = 1;
 
             while(rs.next()) {
+                if( --ticker == 0 ) {
+                    // Send keep alive messages to caller
+                    receiver.send(STATUS_RUNNING, bundle);
+                    ticker = 100;
+                }
+
                 Bundle values = new Bundle();
                 int index=1;
                 values.putString(StockProduct.CHROMISID, rs.getString(index++));
@@ -303,34 +447,27 @@ public class DownloadStockData extends IntentService {
                 values.putString(StockProduct.REFERENCE, rs.getString(index++));
                 values.putString(StockProduct.NAME, rs.getString(index++));
                 values.putString(StockProduct.CATEGORY, rs.getString(index++));
-                values.putString(StockProduct.BARCODE, rs.getString(index++));
-                values.putDouble(StockProduct.BUYPRICE, rs.getDouble(index++));
-                values.putDouble(StockProduct.SELLPRICE, rs.getDouble(index++));
-                values.putString(StockProduct.TAXCODE, rs.getString(index++));
+                values.putString(StockProduct.CODE, rs.getString(index++));
+                values.putDouble(StockProduct.PRICEBUY, rs.getDouble(index++));
+                values.putDouble(StockProduct.PRICESELL, rs.getDouble(index++));
+                values.putString(StockProduct.TAXCAT, rs.getString(index++));
                 values.putByteArray(StockProduct.IMAGE, rs.getBytes(index++));
                 values.putDouble(StockProduct.QTY_INSTOCK, rs.getDouble(index++));
                 values.putDouble(StockProduct.QTY_MIN,rs.getDouble(index++));
                 values.putDouble(StockProduct.QTY_MAX, rs.getDouble(index++));
                 dbLocal.addProduct( new StockProduct( values ), true, true );
 
-                if( --ticker == 0 ) {
-                    // Send keep alive messages to caller
-                    receiver.send(STATUS_RUNNING, bundle);
-                    ticker = 500;
-                }
             }
             rs.close();
             stmt.close();
             bResult = true;
 
-            Log.v(TAG, "handleActionDownloadData: Download completed");
+            Log.v(TAG, "DownloadProducts: Download completed");
 
         } catch (java.sql.SQLException e) {
             m_LastError =  Log.getStackTraceString(e);
             Log.e(TAG, m_LastError);
         }
-
-        CloseConnection();
 
         return bResult;
     }

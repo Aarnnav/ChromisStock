@@ -45,7 +45,7 @@ public class ProductListCursorAdaptor extends CursorAdapter {
 
             // get the rest from the database
             DatabaseHandler db = DatabaseHandler.getInstance(m_Context);
-            StockProduct product = db.getProduct(id);
+            StockProduct product = db.getProduct(id, true);
 
             if( product == null ) {
                 tvName.setText( "DATABASE READ ERROR");

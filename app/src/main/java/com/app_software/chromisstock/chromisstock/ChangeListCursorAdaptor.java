@@ -2,7 +2,9 @@ package com.app_software.chromisstock.chromisstock;
 
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.Cursor;
+import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,14 +49,21 @@ public class ChangeListCursorAdaptor extends CursorAdapter {
             // Extract properties from cursor
             int type = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHandler.CHANGES_TYPE));
             String field = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHandler.CHANGES_FIELD));
-            String value = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHandler.CHANGES_TEXTVALUE));
-
+            String value = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHandler.CHANGES_DISPLAY));
             int sid = R.string.changetype_none;
 
             switch( type ) {
+                case DatabaseHandler.CHANGETYPE_NEWRECORD:
+                    sid = R.string.changetype_newrecord;
+                    field = "";
+                    value = "";
+                    break;
+
+                case DatabaseHandler.CHANGETYPE_CHANGEVALUEBLOB:
                 case DatabaseHandler.CHANGETYPE_CHANGEVALUE:
                     sid = R.string.changetype_changevalue;
                     break;
+                case DatabaseHandler.CHANGETYPE_NEWVALUEBLOB:
                 case DatabaseHandler.CHANGETYPE_NEWVALUE:
                     sid = R.string.changetype_newvalue;
                     break;
@@ -63,10 +72,33 @@ public class ChangeListCursorAdaptor extends CursorAdapter {
                     break;
             }
 
+            if( field.compareTo( StockProduct.NAME) == 0 ) {
+                field =  context.getResources().getString(R.string.change_name);
+            } else if( field.compareTo( StockProduct.CODE) == 0 ) {
+                field =  context.getResources().getString(R.string.change_barcode);
+            } else if( field.compareTo( StockProduct.REFERENCE) == 0 ) {
+                field =  context.getResources().getString(R.string.change_reference);
+            } else if( field.compareTo( StockProduct.PRICEBUY) == 0 ) {
+                field =  context.getResources().getString(R.string.change_buy);
+            } else if( field.compareTo( StockProduct.PRICESELL) == 0 ) {
+                field =  context.getResources().getString(R.string.change_sell);
+            } else if( field.compareTo( StockProduct.QTY_MIN ) == 0 ) {
+                field =  context.getResources().getString(R.string.change_min);
+            } else if( field.compareTo( StockProduct.QTY_MAX) == 0 ) {
+                field =  context.getResources().getString(R.string.change_max);
+            } else if( field.compareTo( StockProduct.QTY_INSTOCK) == 0 ) {
+                field =  context.getResources().getString(R.string.change_stock);
+            } else if( field.compareTo( StockProduct.IMAGE) == 0 ) {
+                field =  context.getResources().getString(R.string.change_image);
+            } else if( field.compareTo( StockProduct.TAXCAT) == 0 ) {
+                field =  context.getResources().getString(R.string.change_taxcat);
+            } else if( field.compareTo( StockProduct.CATEGORY) == 0 ) {
+                field =  context.getResources().getString(R.string.change_category);
+            }
+
             ibDelete.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    DatabaseHandler db = DatabaseHandler.getInstance(m_Context);
-                    db.deleteChange( (Long) v.getTag() );
+                    askDeleteRecord((Long) v.getTag());
                 }
             });
 
@@ -75,4 +107,37 @@ public class ChangeListCursorAdaptor extends CursorAdapter {
             tvField.setText(field);
             tvValue.setText(value);
         }
-    }
+
+        private Long m_currentRecord;
+
+        private void askDeleteRecord( Long recordID ) {
+            m_currentRecord = recordID;
+
+            DatabaseHandler db = DatabaseHandler.getInstance(m_Context);
+
+            if (db.isNewProductRecord(recordID)) {
+
+                AlertDialog.Builder alert = new AlertDialog.Builder(m_Context);
+                alert.setTitle(m_Context.getResources().getString(R.string.dlg_delrec_title));
+                alert.setMessage(m_Context.getResources().getString(R.string.dlg_delrec_message));
+
+                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        DatabaseHandler db = DatabaseHandler.getInstance(m_Context);
+                        db.deleteChange(m_currentRecord);
+                    }
+                });
+
+                alert.setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                            }
+                        });
+
+                alert.show();
+            } else {
+                db.deleteChange( m_currentRecord );
+            }
+
+        }
+}

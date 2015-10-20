@@ -6,6 +6,8 @@ import android.support.v4.app.DialogFragment;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.text.InputType;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -13,6 +15,8 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 
 import com.app_software.chromisstock.chromisstock.Data.StockProduct;
+
+import org.w3c.dom.Text;
 
 public class StockChangeDialog extends DialogFragment {
     private static final String TAG = "StockChangeDialog";
@@ -60,8 +64,8 @@ public class StockChangeDialog extends DialogFragment {
             m_bAllowAdjust = (m_Field.compareTo( StockProduct.QTY_INSTOCK ) == 0);
 
             m_bIsNumber = m_bAllowAdjust ||
-                    (m_Field.compareTo( StockProduct.BUYPRICE ) == 0) ||
-                    (m_Field.compareTo( StockProduct.SELLPRICE ) == 0) ||
+                    (m_Field.compareTo( StockProduct.PRICEBUY ) == 0) ||
+                    (m_Field.compareTo( StockProduct.PRICESELL ) == 0) ||
                     (m_Field.compareTo( StockProduct.QTY_MAX ) == 0) ||
                     (m_Field.compareTo( StockProduct.QTY_MIN ) == 0) ;
 
@@ -101,32 +105,43 @@ public class StockChangeDialog extends DialogFragment {
         m_rbDecrease.setEnabled( m_bAllowAdjust );
 
         DatabaseHandler db = DatabaseHandler.getInstance( getActivity() );
-        StockProduct product = db.getProduct( m_ProductID );
-        m_ChromisID = product.getChromisId();
+        StockProduct product = db.getProduct(m_ProductID, true);
+        if( product == null ) {
+            Log.e(TAG, "Product not found");
+            m_txtProductName.setText("DATABASE ERROR!!");
+        } else {
 
-        m_txtProductName.setText( product.getValueString( StockProduct.NAME ) + " (" + product.getValueString( StockProduct.REFERENCE )+ ")");
-        m_txtField.setText( m_FieldLabel );
-
-        if( m_ChangeType == DatabaseHandler.CHANGETYPE_ADJUSTVALUE ) {
-            Double d = new Double( m_Value );
-            if( d < 0 ) {
-                m_rbDecrease.setChecked( true );
-                d = d * -1;
-                m_Value = String.format("%.0f", d );
+            m_ChromisID = product.getChromisId();
+            String name;
+            if( TextUtils.isEmpty(product.getValueString(StockProduct.NAME)) ) {
+                name = getResources().getString( R.string.change_newproduct );
             } else {
-                m_rbIncrease.setChecked( true );
+                name = product.getValueString(StockProduct.NAME);
             }
-        } else {
-            m_rbSetValue.setChecked(true);
-        }
+            m_txtProductName.setText(name);
+            m_txtField.setText(m_FieldLabel);
 
-        if( m_bIsNumber ) {
-            m_editNewValue.setInputType( InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL );
-        } else {
-            m_editNewValue.setInputType( InputType.TYPE_CLASS_TEXT );
-            m_editNewValue.setText(m_Value);
+            if (m_ChangeType == DatabaseHandler.CHANGETYPE_ADJUSTVALUE) {
+                Double d = new Double(m_Value);
+                if (d < 0) {
+                    m_rbDecrease.setChecked(true);
+                    d = d * -1;
+                    m_Value = String.format("%.0f", d);
+                } else {
+                    m_rbIncrease.setChecked(true);
+                }
+            } else {
+                m_rbSetValue.setChecked(true);
+            }
+
+            if (m_bIsNumber) {
+                m_editNewValue.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+            } else {
+                m_editNewValue.setInputType(InputType.TYPE_CLASS_TEXT);
+                m_editNewValue.setText(m_Value);
+            }
+            m_editNewValue.setHint(m_Value);
         }
-        m_editNewValue.setHint( m_Value );
 
         // Add action buttons
         builder.setView(v).setPositiveButton(R.string.label_ok, new DialogInterface.OnClickListener() {
@@ -160,6 +175,6 @@ public class StockChangeDialog extends DialogFragment {
             value = String.format("%.0f", dv);
         }
 
-        db.addChange(m_ChromisID, type, m_Field, value);
+        db.addChange(m_ChromisID, type, m_Field, value, value);
     }
 }

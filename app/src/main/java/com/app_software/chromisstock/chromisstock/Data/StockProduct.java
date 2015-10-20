@@ -12,22 +12,19 @@ import java.util.UUID;
  */
 public class StockProduct {
     public static final String ID = "_id";
-    public static final String CHROMISID = "ID";
+    public static final String CHROMISID = "CHROMISID";
     public static final String NAME = "NAME";
     public static final String REFERENCE = "REFERENCE";
-    public static final String BARCODE = "BARCODE";
+    public static final String CODE = "CODE";
     public static final String CATEGORY = "CATEGORY";
     public static final String LOCATION = "LOCATION";
-    public static final String BUYPRICE = "BUYPRICE";
-    public static final String SELLPRICE = "SELLPRICE";
-    public static final String TAXCODE = "TAXCODE";
+    public static final String PRICEBUY = "PRICEBUY";
+    public static final String PRICESELL = "PRICESELL";
+    public static final String TAXCAT = "TAXCAT";
     public static final String QTY_INSTOCK = "QTY_INSTOCK";
     public static final String QTY_MAX = "QTY_MAX";
     public static final String QTY_MIN = "QTY_MIN";
     public static final String IMAGE = "IMAGE";
-
-    // This field is created on the fly when creating a StockProduct Object
-    // it is not in the database it is set if CHANGE records exist for this product
     public static final String HASCHANGES = "HASCHANGES";
 
     Bundle m_Values;
@@ -103,5 +100,9 @@ public class StockProduct {
 
     public void setValueInt( String key, int value ){
         m_Values.putInt(key, value);
+    }
+
+    public void setValueByteArray( String key, byte [] value ) {
+        m_Values.putByteArray(key, value);
     }
 }

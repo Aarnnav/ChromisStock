@@ -27,7 +27,7 @@ import com.app_software.chromisstock.chromisstock.Data.StockProduct;
  * Activities containing this fragment MUST implement the {@link OnFragmentInteractionListener}
  * interface.
  */
-public class ChangesFragment extends ListFragment implements AbsListView.OnItemClickListener {
+public class ChangesFragment extends ListFragment implements AbsListView.OnItemClickListener, DatabaseHandler.DataChangeNotify{
 
     // the fragment initialization parameters
     public static final String ARG_PRODUCT = "product";
@@ -86,6 +86,19 @@ public class ChangesFragment extends ListFragment implements AbsListView.OnItemC
         }
 
         setNewListAdaptor();
+
+        // We are interested in database changes
+        DatabaseHandler db = DatabaseHandler.getInstance( getActivity() );
+        db.addChangeNotify(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        // No longer interested in database changes
+        DatabaseHandler db = DatabaseHandler.getInstance( getActivity() );
+        db.removeChangeNotify( this );
+
+        super.onDestroy();
     }
 
     @Override
@@ -139,6 +152,22 @@ public class ChangesFragment extends ListFragment implements AbsListView.OnItemC
 
         if (emptyView instanceof TextView) {
             ((TextView) emptyView).setText(emptyText);
+        }
+    }
+
+    @Override
+    public void NotifyDataChanged(int type, String chromisID) {
+        switch( type ) {
+            case DatabaseHandler.CHANGENOTIFY_RESET:
+            case DatabaseHandler.CHANGENOTIFY_DELETPRODUCT:
+                // we will be killed - ignore here
+                break;
+            case DatabaseHandler.CHANGENOTIFY_CHANGEPRODUCT:
+                if( m_Product.compareTo( chromisID ) == 0 ) {
+                    // Refetch our data
+                    setNewListAdaptor();
+                }
+                break;
         }
     }
 

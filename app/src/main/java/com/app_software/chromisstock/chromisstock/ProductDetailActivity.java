@@ -4,9 +4,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+
+import com.app_software.chromisstock.chromisstock.Data.StockProduct;
 
 /**
  * An activity representing a single Product detail screen. This
@@ -18,6 +21,7 @@ import android.widget.Button;
  * more than a {@link ProductDetailFragment}.
  */
 public class ProductDetailActivity extends AppCompatActivity implements ChangesFragment.OnFragmentInteractionListener, DatabaseHandler.DataChangeNotify {
+    String TAG = "ProductDetailActivity";
 
     @Override
     public void onDestroy() {
@@ -53,9 +57,15 @@ public class ProductDetailActivity extends AppCompatActivity implements ChangesF
         DatabaseHandler db = DatabaseHandler.getInstance( this );
 
         Bundle changeArgs = new Bundle();
-        String product = db.getProduct( productID ).getChromisId();
+        StockProduct product = db.getProduct(productID, false);
+        if( product == null) {
+            Log.e( TAG, "Invalid Product ID" );
+            return;
+        }
 
-        changeArgs.putString(ChangesFragment.ARG_PRODUCT, product);
+        String id = product.getChromisId();
+
+        changeArgs.putString(ChangesFragment.ARG_PRODUCT, id);
         ChangesFragment newChanges = new ChangesFragment();
         newChanges.setArguments(changeArgs);
 
@@ -119,8 +129,9 @@ public class ProductDetailActivity extends AppCompatActivity implements ChangesF
     }
 
     @Override
-    public void NotifyDataChanged() {
+    public void NotifyDataChanged( int action,  String chromisID ) {
         // Need to recreate the fragments to force a redraw
-        createFragments();
+//  fragments now listen for updates themselves
+//      createFragments();
     }
 }
