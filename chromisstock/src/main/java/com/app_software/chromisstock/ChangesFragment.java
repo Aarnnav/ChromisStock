@@ -1,4 +1,28 @@
-package com.app_software.chromisstock.chromisstock;
+//    ChromisStock
+//    Copyright (c) 2015 John Barrett
+//    http://www.app-software.com
+//    http://www.chromis.co.uk
+//
+//    This file is part of Chromis Stock
+//    An Android based system that works with Chromis POS and some versions of Unicenta POS
+//
+//    ChromisStock is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    ChromisStock does not include the changes uploader. This is a seperate, bolt on application
+//    that can be downloaded from Google Play.
+//
+//    ChromisStock is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with Chromis POS.
+
+package com.app_software.chromisstock;
 
 import android.app.Activity;
 import android.database.Cursor;
@@ -16,7 +40,7 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.app_software.chromisstock.chromisstock.Data.StockProduct;
+import com.app_software.chromisstock.Data.StockProduct;
 
 /**
  * A fragment representing a list of Items.

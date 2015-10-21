@@ -1,9 +1,9 @@
-package com.app_software.chromisstock.chromisstock.Data;
+package com.app_software.chromisstock.Data;
 
 import android.database.Cursor;
 import android.os.Bundle;
 
-import com.app_software.chromisstock.chromisstock.DatabaseHandler;
+import com.app_software.chromisstock.DatabaseHandler;
 
 import java.util.UUID;
 

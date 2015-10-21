@@ -25,7 +25,4 @@ Currently it must be the server IP address, the server name does not appear to w
 
 Future Developments
 -------------------
-Add unicentaPOS support
-Add code to change data locally
 Add code to upload changes to the main POS database
-Add support for downloading data by location and for displaying data by location.
