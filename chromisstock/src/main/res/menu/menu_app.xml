@@ -43,4 +43,9 @@
         android:icon="@mipmap/ic_settings_black_24dp" >
     </item>
 
+    <item android:id="@+id/about"
+        android:title="@string/menu_about"
+        android:icon="@mipmap/ic_settings_black_24dp" >
+    </item>
+
 </menu>

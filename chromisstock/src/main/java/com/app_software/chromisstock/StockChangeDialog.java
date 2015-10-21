@@ -40,8 +40,6 @@ import android.widget.TextView;
 
 import com.app_software.chromisstock.Data.StockProduct;
 
-import org.w3c.dom.Text;
-
 public class StockChangeDialog extends DialogFragment {
     private static final String TAG = "StockChangeDialog";
 

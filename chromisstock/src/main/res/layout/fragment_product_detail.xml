@@ -17,8 +17,8 @@
         android:focusable="false" />
 
     <ImageView
-        android:layout_width="125dp"
-        android:layout_height="125dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:id="@+id/iv_image"
         android:contentDescription="@string/label_productimage"
         android:contextClickable="false"
@@ -39,7 +39,7 @@
     <EditText android:id="@+id/edit_reference"
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
-        android:width="150dp"
+        android:width="175dp"
         android:layout_alignTop="@+id/iv_image"
         android:layout_alignStart="@+id/edit_instock"
         android:editable="false"
@@ -60,12 +60,20 @@
         android:layout_height="wrap_content"
         android:id="@+id/edit_barcode"
         android:layout_below="@+id/edit_reference"
-        android:width="150dp"
+        android:width="175dp"
         android:layout_toEndOf="@+id/txt_barcode"
         android:editable="false"
         android:clickable="true"
         android:focusable="false"
         android:textSize="@dimen/product_textsize" />
+
+    <ImageButton
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:id="@+id/ibBarcode"
+        android:src="@mipmap/ic_barcode"
+        android:layout_alignBottom="@+id/edit_barcode"
+        android:layout_toEndOf="@+id/edit_barcode" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -79,13 +87,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/edit_instock"
-        android:width="90dp"
+        android:width="175dp"
         android:layout_below="@+id/edit_barcode"
-        android:layout_toEndOf="@+id/txt_instock"
         android:editable="false"
         android:clickable="true"
         android:focusable="false"
-        android:textSize="@dimen/product_textsize" />
+        android:textSize="@dimen/product_textsize"
+        android:layout_alignStart="@+id/edit_barcode" />
+
+    <ImageButton
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:id="@+id/ibAddStock"
+        android:src="@android:drawable/ic_menu_add"
+        android:layout_alignBottom="@+id/edit_instock"
+        android:layout_toEndOf="@+id/edit_instock" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -179,15 +195,6 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true" />
 
-
-    <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/ibAddStock"
-        android:src="@android:drawable/ic_menu_add"
-        android:layout_alignTop="@+id/edit_instock"
-        android:layout_alignEnd="@+id/edit_reference" />
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -202,7 +209,8 @@
         android:id="@+id/spn_taxcat"
         android:spinnerMode="dropdown"
         android:layout_below="@+id/edit_pricebuy"
-        android:layout_toEndOf="@+id/lbl_category" />
+        android:layout_toEndOf="@+id/lbl_category"
+        android:layout_marginTop="5dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -219,7 +227,8 @@
         android:spinnerMode="dropdown"
         android:layout_alignParentEnd="true"
         android:layout_toEndOf="@+id/lbl_category"
-        android:layout_below="@+id/spn_taxcat" />
+        android:layout_below="@+id/spn_taxcat"
+        android:layout_marginTop="5dp" />
 
     <FrameLayout
         android:id="@+id/product_changes_container"

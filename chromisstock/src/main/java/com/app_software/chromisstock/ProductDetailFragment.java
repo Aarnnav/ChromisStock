@@ -25,38 +25,33 @@
 package com.app_software.chromisstock;
 
 import android.app.Activity;
+import android.app.SearchManager;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.app_software.chromisstock.Data.StockProduct;
+import com.google.zxing.integration.android.ScannerIntegrator;
+import com.google.zxing.integration.android.ScannerResult;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -66,10 +61,10 @@ import java.util.List;
  * on handsets.
  */
 public class ProductDetailFragment extends Fragment implements  DatabaseHandler.DataChangeNotify {
-    /**
-     * The fragment argument representing the item ID that this fragment
-     * represents.
-     */
+    static final String TAG = "ProductDetailFragment";
+
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+
     public static final String ARG_ITEM_ID = StockProduct.ID;
 
     /**
@@ -233,6 +228,12 @@ public class ProductDetailFragment extends Fragment implements  DatabaseHandler.
             }
         });
 
+        rootView.findViewById(R.id.ibBarcode).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                onScanItem(v);
+            }
+        });
+
         m_edit_instock.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 onEditItem(v);
@@ -317,8 +318,6 @@ public class ProductDetailFragment extends Fragment implements  DatabaseHandler.
 
     }
 
-    static final int REQUEST_IMAGE_CAPTURE = 1;
-
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
@@ -332,26 +331,92 @@ public class ProductDetailFragment extends Fragment implements  DatabaseHandler.
 
         if (resultCode == Activity.RESULT_OK)
         {
-            Bitmap bitmap = null;
-
             if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                Bitmap bitmap = null;
+
                 if (intent != null) {
                     Bundle extras = intent.getExtras();
                     bitmap = (Bitmap) extras.get("data");
                     m_image.setImageBitmap(bitmap);
                 }
-            }
 
-            if( bitmap != null ) {
-                ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream1);
-                byte[] imageInByte = stream1.toByteArray();
+                if (bitmap != null) {
+                    ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream1);
+                    byte[] imageInByte = stream1.toByteArray();
 
                     m_db.addChange(mItem.getChromisId(), DatabaseHandler.CHANGETYPE_CHANGEVALUEBLOB,
-                          StockProduct.IMAGE, imageInByte, getResources().getString(R.string.captured_image));
+                            StockProduct.IMAGE, imageInByte, getResources().getString(R.string.captured_image));
 
+                }
+            } else {
+
+                ScannerResult scanResult = ScannerIntegrator.parseActivityResult(requestCode, resultCode, intent);
+                if (scanResult != null) {
+                    String code = scanResult.getContents();
+
+                    if( !TextUtils.isEmpty(code) ) {
+                        // is this an existing barcode ?
+                        DatabaseHandler db = DatabaseHandler.getInstance( getContext() );
+                        StockProduct product = db.lookupBarcode(code);
+                        if (product != null) {
+                            // Ask to load the product details activity
+                            askDuplicateBarcode(product);
+                        } else {
+                            // Use the scanned data as the barcode
+                            setBarcode(code);
+                        }
+                    }
+                }
             }
        }
+    }
+
+    private void setBarcode( String code ) {
+        DatabaseHandler db = DatabaseHandler.getInstance(getActivity());
+         db.addChange( mItem.getChromisId(),  DatabaseHandler.CHANGETYPE_CHANGEVALUE,
+                StockProduct.CODE, code, code);
+    }
+
+    private void askDuplicateBarcode( StockProduct product ) {
+
+        final Long duplicateID = product.getID();
+        final String barcode = product.getValueString( StockProduct.CODE );
+
+        AlertDialog.Builder alert = new AlertDialog.Builder( getActivity() );
+        alert.setTitle(getResources().getString(R.string.dlg_barcode_exists_title));
+        alert.setMessage(getResources().getString(R.string.dlg_barcode_exists_message));
+
+        alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                // Bring up the existing product
+                Intent detailIntent = new Intent(getActivity(), ProductDetailActivity.class);
+                detailIntent.putExtra(ProductDetailFragment.ARG_ITEM_ID, duplicateID);
+                startActivity(detailIntent);
+            }
+        });
+
+        alert.setNeutralButton("No",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // Use the scanned data as the barcode
+                        setBarcode(barcode);
+                    }
+                });
+
+        alert.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                });
+
+        alert.show();
+
+    }
+
+    private void onScanItem( View v ) {
+        ScannerIntegrator scanner = new ScannerIntegrator(this);
+        scanner.initiateScan();
     }
 
     private void onEditItem( View v ) {

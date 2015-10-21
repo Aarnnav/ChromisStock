@@ -18,6 +18,7 @@
     <string name="menu_send_updates">Send Changes</string>
     <string name="menu_discard_updates">Reset Data</string>
     <string name="menu_use_scanner">Scan Barcode</string>
+    <string name="menu_about">About Chromis Stock</string>
     <string name="no_items">No Items to display</string>
     <string name="no_match">No matches for </string>
     <string name="fetching_data">Fetching Data...</string>
@@ -32,6 +33,9 @@
 
     <string name="dlg_delrec_title">Delete Record</string>
     <string name="dlg_delrec_message">This will delete the new record and any changes made to it.</string>
+
+    <string name="dlg_barcode_exists_title">Duplicate Barcode</string>
+    <string name="dlg_barcode_exists_message">This barcode is already in use, do you want to switch to the product using it?</string>
 
     <string name="dbstatus_unknown">Database status unknown</string>
     <string name="dbstatus_download_complete">Database download complete</string>
@@ -68,5 +72,7 @@
     <string name="change_image">Product Image</string>
 
     <string name="captured_image">New image</string>
+    <string name="title_activity_about">About Chromis Stock</string>
+    <string name="action_settings">Settings</string>
 
 </resources>

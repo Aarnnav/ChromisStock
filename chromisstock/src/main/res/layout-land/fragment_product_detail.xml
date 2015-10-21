@@ -54,20 +54,29 @@
         android:text="@string/label_barcode"
         android:id="@+id/txt_barcode"
         android:layout_alignBottom="@+id/edit_reference"
-        android:layout_toStartOf="@+id/edit_barcode" />
+        android:layout_toEndOf="@+id/edit_reference" />
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/edit_barcode"
-        android:width="150dp"
+        android:width="175dp"
         android:layout_alignBottom="@+id/edit_reference"
-        android:layout_alignEnd="@+id/edit_maxqty"
+        android:layout_toEndOf="@+id/txt_barcode"
         android:clickable="true"
         android:editable="false"
         android:focusable="false"
         android:textStyle="normal"
         android:textSize="@dimen/product_textsize" />
+
+
+    <ImageButton
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:id="@+id/ibBarcode"
+        android:src="@mipmap/ic_barcode"
+        android:layout_alignBottom="@+id/edit_barcode"
+        android:layout_toEndOf="@+id/edit_barcode" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -90,6 +99,15 @@
         android:textStyle="normal"
         android:textSize="@dimen/product_textsize" />
 
+    <ImageButton
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:id="@+id/ibAddStock"
+        android:src="@android:drawable/ic_menu_add"
+        android:layout_below="@+id/edit_reference"
+        android:layout_toStartOf="@+id/txt_minqty" />
+
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -103,7 +121,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/edit_minqty"
         android:inputType="numberDecimal"
-        android:width="90dp"
+        android:width="70dp"
         android:clickable="true"
         android:editable="false"
         android:focusable="false"
@@ -126,7 +144,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/edit_maxqty"
         android:inputType="numberDecimal"
-        android:width="90dp"
+        android:width="70dp"
         android:layout_toStartOf="@+id/iv_image"
         android:layout_marginEnd="30dp"
         android:layout_alignTop="@+id/edit_minqty"
@@ -203,14 +221,6 @@
         android:layout_below="@+id/spn_taxcat">
     </FrameLayout>
 
-    <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/ibAddStock"
-        android:src="@android:drawable/ic_menu_add"
-        android:layout_below="@+id/edit_reference"
-        android:layout_toStartOf="@+id/txt_minqty" />
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -225,7 +235,8 @@
         android:id="@+id/spn_taxcat"
         android:layout_toEndOf="@+id/lbl_taxcat"
         android:spinnerMode="dropdown"
-        android:layout_below="@+id/edit_pricebuy" />
+        android:layout_below="@+id/edit_pricebuy"
+        android:layout_marginTop="5dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -241,6 +252,7 @@
         android:id="@+id/spn_category"
         android:layout_toEndOf="@+id/lbl_category"
         android:layout_alignBottom="@+id/spn_taxcat"
-        android:spinnerMode="dropdown" />
+        android:spinnerMode="dropdown"
+        android:layout_marginTop="5dp" />
 
 </RelativeLayout>

@@ -194,7 +194,7 @@ public class ProductListActivity extends AppCompatActivity
                 DatabaseHandler.getInstance( this ).ReBuildProductTable(this);
                 return true;
             case R.id.send_updates:
-                Toast.makeText( this, "Not yet implementated", Toast.LENGTH_SHORT ).show();
+                Toast.makeText(this, "Not yet implementated", Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.discard_updates:
                 askResetData();
@@ -202,6 +202,10 @@ public class ProductListActivity extends AppCompatActivity
             case R.id.use_scanner:
                 ScannerIntegrator scanner = new ScannerIntegrator(this);
                 scanner.initiateScan();
+                return true;
+            case R.id.about:
+                Intent i = new Intent(this, AboutActivity.class);
+                startActivity(i);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

@@ -27,7 +27,6 @@ package com.app_software.chromisstock;
 import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.ResultReceiver;
 import android.text.TextUtils;
@@ -39,8 +38,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
