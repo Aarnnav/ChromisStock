@@ -58,11 +58,11 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     private static final String DATABASE_NAME = "ChromisStock";
 
     // Table names
-    private static final String TABLE_PRODUCTS = "PRODUCTS";
-    private static final String TABLE_CHANGES = "CHANGES";
-    private static final String TABLE_LOCATIONS = "LOCATIONS";
-    private static final String TABLE_CATEGORIES = "CATEGORIES";
-    private static final String TABLE_TAXES = "TAXES";
+    public static final String TABLE_PRODUCTS = "PRODUCTS";
+    public static final String TABLE_CHANGES = "CHANGES";
+    public static final String TABLE_LOCATIONS = "LOCATIONS";
+    public static final String TABLE_CATEGORIES = "CATEGORIES";
+    public static final String TABLE_TAXES = "TAXES";
 
     public static final String CHANGES_ID = "_id";
     public static final String CHANGES_PRODUCT = "PRODUCTID";
@@ -148,7 +148,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     protected void NotifyDataChanged( int action, String chromisID  ) {
         Iterator<DataChangeNotify> iterator = m_NotifyList.iterator();
         while (iterator.hasNext()) {
-            iterator.next().NotifyDataChanged( action, chromisID );
+            iterator.next().NotifyDataChanged(action, chromisID);
         }
     }
 
@@ -385,7 +385,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     public void emptyTables() {
         emptyTables(null);
-        NotifyDataChanged( CHANGENOTIFY_RESET, null );
+        NotifyDataChanged(CHANGENOTIFY_RESET, null);
     }
 
     public void emptyProductTable() {
@@ -549,30 +549,57 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Adding new product
-    public Long createProduct( ) {
-        StockProduct product = new StockProduct();
+    public Long createProduct( Bundle values ) {
+
+        if( values == null ) {
+            values = new Bundle();
+        }
+
         SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
-        String chromisID = UUID.randomUUID().toString();
 
-        product.setValueString( StockProduct.CHROMISID, chromisID );
-        product.setValueString(StockProduct.NAME, "" );
-        product.setValueString(StockProduct.LOCATION, SP.getString("location", null) );
-        product.setValueString(StockProduct.REFERENCE, "" );
-        product.setValueString(StockProduct.CODE, "" );
-        product.setValueString(StockProduct.CATEGORY, "" );
-        product.setValueDouble(StockProduct.PRICEBUY, (double) 0);
-        product.setValueDouble(StockProduct.PRICESELL, (double) 0);
-        product.setValueDouble(StockProduct.QTY_INSTOCK, (double) 0 );
-        product.setValueDouble(StockProduct.QTY_MAX, (double) 0 );
-        product.setValueDouble(StockProduct.QTY_MIN, (double) 0);
 
+        if( values.containsKey(StockProduct.CHROMISID) == false ) {
+            values.putString(StockProduct.CHROMISID, UUID.randomUUID().toString() );
+        }
+        if( values.containsKey(StockProduct.NAME) == false ) {
+            values.putString(StockProduct.NAME, "" );
+        }
+        if( values.containsKey(StockProduct.LOCATION) == false ) {
+            values.putString(StockProduct.LOCATION, SP.getString("location", null) );
+        }
+        if( values.containsKey(StockProduct.REFERENCE) == false ) {
+            values.putString(StockProduct.REFERENCE, "" );
+        }
+        if( values.containsKey(StockProduct.CODE) == false ) {
+            values.putString(StockProduct.CODE, "" );
+        }
+        if( values.containsKey(StockProduct.CATEGORY) == false ) {
+            values.putString(StockProduct.CATEGORY, "" );
+        }
+        if( values.containsKey(StockProduct.PRICEBUY) == false ) {
+            values.putDouble(StockProduct.PRICEBUY, (double) 0);
+        }
+        if( values.containsKey(StockProduct.PRICESELL) == false ) {
+            values.putDouble(StockProduct.PRICESELL, (double) 0 );
+        }
+        if( values.containsKey(StockProduct.QTY_INSTOCK) == false ) {
+            values.putDouble(StockProduct.QTY_INSTOCK, (double) 0 );
+        }
+        if( values.containsKey(StockProduct.QTY_MAX) == false ) {
+            values.putDouble(StockProduct.QTY_MAX, (double) 0 );
+        }
+        if( values.containsKey(StockProduct.QTY_MIN) == false ) {
+            values.putDouble(StockProduct.QTY_MIN, (double) 0 );
+        }
+
+        StockProduct product = new StockProduct( values );
         addProduct( product, false, false );
 
         // Get the product ID for the new record
-       product = getProduct( chromisID, false );
+       product = getProduct( product.getChromisId(), false );
 
         // Add a stock level adjustment change
-        addChange(chromisID, CHANGETYPE_NEWRECORD, StockProduct.ID, product.getID().toString(), "");
+        addChange(product.getChromisId(), CHANGETYPE_NEWRECORD, StockProduct.ID, product.getID().toString(), "");
 
         NotifyDataChanged( CHANGENOTIFY_NEWPRODUCT,  product.getChromisId() );
 
@@ -867,6 +894,19 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         updateChangeFlag(chromisID, false, true);
     }
 
+    private double doubleOrNothing( String str ) {
+        double dval = (double) 0;
+
+        try {
+            if( TextUtils.isEmpty(str) == false ) {
+                dval = Double.valueOf(str);
+            }
+        } catch (NumberFormatException e) {
+        }
+
+        return dval;
+    }
+
     // Apply any changes found in the Changes table to the given StockProduct
     public void applyChanges( StockProduct product ) {
 
@@ -886,7 +926,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
                     case CHANGETYPE_CHANGEVALUE:
                     case CHANGETYPE_NEWVALUE:
                         if( isNumberField( field ) ) {
-                            Double value = Double.valueOf(c.getString(colTextValue));
+                            Double value = doubleOrNothing(c.getString(colTextValue));
                             product.setValueDouble( field, value);
                         } else {
                             product.setValueString( field, c.getString(colTextValue) );
@@ -899,7 +939,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
                     case CHANGETYPE_ADJUSTVALUE:
                         Double value = product.getValueDouble( field );  // Use field name in change record
-                        value += Double.valueOf(c.getString(colTextValue));                 // Use adjustment in change record
+                        value += doubleOrNothing(c.getString(colTextValue));                 // Use adjustment in change record
                         product.setValueDouble( field, value);
                         break;
 
@@ -981,6 +1021,26 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     }
 
+    public boolean isNewProduct( String chromisID ) {
+        boolean isNew = false;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        try {
+            Cursor cursor = db.query(TABLE_CHANGES, new String[]{CHANGES_ID},
+                    CHANGES_TYPE + "=" + CHANGETYPE_NEWRECORD + " AND " + CHANGES_PRODUCT + "='" + chromisID + "'",
+                    null, null, null, null, null);
+
+            if( cursor.moveToFirst() ) {
+                isNew = true;
+            }
+
+            cursor.close();
+        } catch ( SQLiteException e) {
+            Log.d(TAG, e.toString());
+        }
+        return isNew;
+    }
 
     public void updateChangeFlag( String chromisID, boolean check, boolean setTo ) {
         SQLiteDatabase db = this.getWritableDatabase();

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Chromis Stock</string>
+    <string name="app_name">ChromisPOS Stock</string>
     <string name="title_product_detail">Product Detail</string>
     <string name="SearchPrompt">Search</string>
     <string name="label_productname">Name:</string>
@@ -15,13 +15,18 @@
     <string name="menu_search">Search</string>
     <string name="menu_new_product">New Product</string>
     <string name="menu_fetch_products">Fetch Products</string>
-    <string name="menu_send_updates">Send Changes</string>
+    <string name="menu_send_updates">Upload Changes</string>
     <string name="menu_discard_updates">Reset Data</string>
     <string name="menu_use_scanner">Scan Barcode</string>
     <string name="menu_about">About Chromis Stock</string>
     <string name="no_items">No Items to display</string>
     <string name="no_match">No matches for </string>
     <string name="fetching_data">Fetching Data...</string>
+
+    <string name="label_yes">Yes</string>
+    <string name="label_no">No</string>
+    <string name="label_ok">OK</string>
+    <string name="label_cancel">Cancel</string>
 
     <string name="dlg_connect_title">Testing Connection</string>
     <string name="dlg_connect_message">This may take a long time.
@@ -36,6 +41,12 @@
 
     <string name="dlg_barcode_exists_title">Duplicate Barcode</string>
     <string name="dlg_barcode_exists_message">This barcode is already in use, do you want to switch to the product using it?</string>
+
+    <string name="dlg_new_barcode_title">Barcode Not Recognised</string>
+    <string name="dlg_new_barcode_message">Unknown barcode, do you want to create a new product?</string>
+
+    <string name="dlg_install_uploader_title">"Uploader Not Found"</string>
+    <string name="dlg_install_uploader_message">This function requires the changes uploader. Would you like to install it?</string>
 
     <string name="dbstatus_unknown">Database status unknown</string>
     <string name="dbstatus_download_complete">Database download complete</string>
@@ -52,8 +63,7 @@
     <string name="label_increase_by">Increase by</string>
     <string name="label_decrease_by">Decrease by</string>
     <string name="label_set_value">Set New Value</string>
-    <string name="label_ok">OK</string>
-    <string name="label_cancel">Cancel</string>
+
     <string name="label_changes">Changes</string>
     <string name="label_taxcat">Tax:</string>
     <string name="label_category">Category:</string>

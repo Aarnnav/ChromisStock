@@ -187,14 +187,16 @@ public class ProductListActivity extends AppCompatActivity
                 doSettings();
                 return true;
             case R.id.new_product:
-                Long id = DatabaseHandler.getInstance( this ).createProduct();
+                Long id = DatabaseHandler.getInstance( this ).createProduct( null );
                 onItemSelected(id);
                 return true;
             case R.id.fetch_products:
                 DatabaseHandler.getInstance( this ).ReBuildProductTable(this);
                 return true;
             case R.id.send_updates:
-                Toast.makeText(this, "Not yet implementated", Toast.LENGTH_SHORT).show();
+                uploadIntegrator uploader = new uploadIntegrator( this );
+                uploader.initiateUpload();
+//                Toast.makeText(this, "Not yet implementated", Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.discard_updates:
                 askResetData();
@@ -266,6 +268,42 @@ public class ProductListActivity extends AppCompatActivity
         }
     }
 
+    private void askCreateProduct( final String code ) {
+
+        AlertDialog.Builder alert = new AlertDialog.Builder( this );
+        alert.setTitle(getResources().getString(R.string.dlg_new_barcode_title));
+        alert.setMessage(getResources().getString(R.string.dlg_new_barcode_message));
+
+        alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                Bundle values = new Bundle();
+                values.putString( StockProduct.CODE, code );
+                Long id = DatabaseHandler.getInstance( getApplicationContext() ).createProduct( values );
+                onItemSelected(id);
+            }
+        });
+
+        alert.setNeutralButton("No",
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    // Use the scanned data in a new search fragment
+                    Log.v(TAG, "Barcode not in system, starting search");
+                    Intent i = new Intent( getApplicationContext(), ProductListActivity.class);
+                    i.putExtra(SearchManager.QUERY, code);
+                    i.setAction(Intent.ACTION_SEARCH );
+                    startActivity(i);
+                }
+            });
+
+        alert.setNegativeButton("Cancel",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                });
+
+        alert.show();
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
        ScannerResult scanResult = ScannerIntegrator.parseActivityResult(requestCode, resultCode, intent);
        if (scanResult != null) {
@@ -279,12 +317,7 @@ public class ProductListActivity extends AppCompatActivity
                    // Directly load the product details activity
                    onItemSelected(product.getID());
                } else {
-                   // Use the scanned data in a new search fragment
-                   Log.v( TAG, "Barcode not in system, starting search");
-                   Intent i = new Intent(this, ProductListActivity.class);
-                   i.putExtra(SearchManager.QUERY, code);
-                   i.setAction( Intent.ACTION_SEARCH );
-                   startActivity(i);
+                   askCreateProduct(code);
                }
            }
        }

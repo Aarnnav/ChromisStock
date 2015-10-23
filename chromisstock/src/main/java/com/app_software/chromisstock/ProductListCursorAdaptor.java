@@ -76,11 +76,15 @@ public class ProductListCursorAdaptor extends CursorAdapter {
                 tvID.setText( product.getValueString(StockProduct.REFERENCE));
                 tvName.setText(product.getValueString(StockProduct.NAME));
 
+                int c = m_Context.getResources().getColor(R.color.normallistitemcolour);
                 if( product.getValueBoolean( StockProduct.HASCHANGES ) ) {
-                    int c = m_Context.getResources().getColor(R.color.changedlistitemcolour);
-                    tvID.setTextColor( c );
-                    tvName.setTextColor( c );
+                    c = m_Context.getResources().getColor(R.color.changedlistitemcolour);
+                    if( db.isNewProduct(product.getChromisId()) ) {
+                        c = m_Context.getResources().getColor(R.color.newlistitemcolour);
+                    }
                 }
+                tvID.setTextColor(c);
+                tvName.setTextColor(c);
             }
         }
     }

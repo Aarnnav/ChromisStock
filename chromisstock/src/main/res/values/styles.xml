@@ -5,7 +5,10 @@
 
     </style>
 
+    <color name="normallistitemcolour">#000000</color>
     <color name="changedlistitemcolour">#CC0066</color>
+    <color name="newlistitemcolour">#009900</color>
+
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
