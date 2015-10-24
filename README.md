@@ -16,6 +16,8 @@ PLEASE NOTE: This release only supports MySQL POS databases. A new module runnin
 Barcode reading is supported by external applications, a suitable application that uses the camera can be installed
 from within the application.
 
+The uploader app is NOT released under the GPL and remains a separate paid for application that is Copyright (c) John Barrett. Please respect this as it is my way of paying for some of the development work I have done on these apps.
+
 Configuration
 -------------
 On the settings screen:
