@@ -67,35 +67,26 @@ public class uploadIntegrator {
         intent.putExtra(EXTRA_CHROMISUSER, SP.getString("chromis_user", null));
         intent.putExtra(EXTRA_LOCATION, SP.getString("location", null));
 
-        if( checkUploader() ) {
-            PackageManager pm = activity.getPackageManager();
-            List<ResolveInfo> activityList = pm.queryIntentActivities(intent, 0);
-            for (final ResolveInfo app : activityList) {
-                if ((app.activityInfo.name).contains(UPLOAD_PACKAGE)) {
-                    final ActivityInfo info = app.activityInfo;
-                    final ComponentName name = new ComponentName(info.applicationInfo.packageName, info.name);
-                    intent.addCategory(Intent.CATEGORY_DEFAULT);
-                    intent.setComponent(name);
-                    activity.startActivity(intent);
-                    break;
-                }
+        boolean bLaunched = false;
+        PackageManager pm = activity.getPackageManager();
+        List<ResolveInfo> activityList = pm.queryIntentActivities(intent, 0);
+        for (final ResolveInfo app : activityList) {
+            if ((app.activityInfo.name).contains(UPLOAD_PACKAGE)) {
+                final ActivityInfo info = app.activityInfo;
+                final ComponentName name = new ComponentName(info.applicationInfo.packageName, info.name);
+                intent.addCategory(Intent.CATEGORY_DEFAULT);
+                intent.setComponent(name);
+                activity.startActivity(intent);
+                bLaunched = true;
+                break;
             }
         }
-
+        if( !bLaunched ) {
+            showDownloadDialog();
+        }
         return null;
     }
 
-    private boolean checkUploader() {
-        PackageManager pm = activity.getPackageManager();
-        Intent i = pm.getLaunchIntentForPackage(UPLOAD_PACKAGE);
-
-        if( i == null) {
-            showDownloadDialog();
-            return false;
-        } else {
-            return true;
-        }
-    }
 
     private AlertDialog showDownloadDialog() {
         AlertDialog.Builder downloadDialog = new AlertDialog.Builder(activity);
