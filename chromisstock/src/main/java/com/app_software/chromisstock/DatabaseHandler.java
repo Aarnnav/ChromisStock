@@ -52,7 +52,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     String TAG = "DatabaseHandler";
 
     // Database Version
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
 
     // Database Name
     private static final String DATABASE_NAME = "ChromisStock";
@@ -65,6 +65,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     public static final String TABLE_TAXES = "TAXES";
 
     public static final String CHANGES_ID = "_id";
+    public static final String CHANGES_BATCH = "BATCH";
     public static final String CHANGES_PRODUCT = "PRODUCTID";
     public static final String CHANGES_TYPE = "CHANGETYPE";
     public static final String CHANGES_FIELD = "FIELD";
@@ -72,7 +73,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     public static final String CHANGES_TEXTVALUE = "TEXTVALUE";
     public static final String CHANGES_BLOBVALUE = "BLOBVALUE";
 
-    public static final int CHANGETYPE_NONE  = 0;
+    public static final int CHANGETYPE_NONE = 0;
     public static final int CHANGETYPE_ADJUSTVALUE = 1;
     public static final int CHANGETYPE_CHANGEVALUE = 2;
     public static final int CHANGETYPE_CHANGEVALUEBLOB = 3;
@@ -96,6 +97,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     private DownloadResultReceiver m_Receiver;
     private Toast m_toaster;
     private boolean bFetchingData;
+    private String m_ChangeUID;
 
     public boolean isFetchingData() {
         return bFetchingData;
@@ -107,7 +109,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     public static final int CHANGENOTIFY_DELETPRODUCT = 4;
 
     public interface DataChangeNotify {
-        public void NotifyDataChanged( int type, String chromisID );
+        public void NotifyDataChanged(int type, String chromisID);
     }
 
     private static DatabaseHandler mInstance = null;
@@ -138,14 +140,14 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     public void addChangeNotify(DataChangeNotify receiver) {
         m_NotifyList.remove(receiver);  // Avoid multiple registrations
-        m_NotifyList.add( receiver );
+        m_NotifyList.add(receiver);
     }
 
     public void removeChangeNotify(DataChangeNotify receiver) {
         m_NotifyList.remove(receiver);
     }
 
-    protected void NotifyDataChanged( int action, String chromisID  ) {
+    protected void NotifyDataChanged(int action, String chromisID) {
         Iterator<DataChangeNotify> iterator = m_NotifyList.iterator();
         while (iterator.hasNext()) {
             iterator.next().NotifyDataChanged(action, chromisID);
@@ -153,22 +155,23 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     public interface DownloadProgressReceiver {
-        public void DownloadProgressReceiver( String Msg, boolean bFinished );
+        public void DownloadProgressReceiver(String Msg, boolean bFinished);
     }
 
     private List<DownloadProgressReceiver> m_ProgressReceivers = new ArrayList<DownloadProgressReceiver>();
+
     public void addDownloadProgressReceiver(DownloadProgressReceiver receiver) {
-        m_ProgressReceivers.add( receiver );
+        m_ProgressReceivers.add(receiver);
     }
 
-    protected void NotifyDownloadProgress( String msg, boolean bfinished ) {
+    protected void NotifyDownloadProgress(String msg, boolean bfinished) {
         Iterator<DownloadProgressReceiver> iterator = m_ProgressReceivers.iterator();
         while (iterator.hasNext()) {
             iterator.next().DownloadProgressReceiver(msg, bfinished);
         }
     }
 
-    String[] m_ProductFields = new String [] {
+    String[] m_ProductFields = new String[]{
             StockProduct.ID,
             StockProduct.CHROMISID,
             StockProduct.NAME,
@@ -187,7 +190,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     };
 
 
-    private Bundle ProductFieldsToBundle( Cursor cursor ) {
+    private Bundle ProductFieldsToBundle(Cursor cursor) {
         Bundle values = new Bundle();
         int index = 0;
         values.putLong(StockProduct.ID, cursor.getLong(index++));
@@ -210,7 +213,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         return values;
     }
 
-    private ContentValues ProductBundleToContentValues( Bundle bundle ) {
+    private ContentValues ProductBundleToContentValues(Bundle bundle) {
         ContentValues values = new ContentValues();
 
         values.put(StockProduct.ID, bundle.getLong(StockProduct.ID));
@@ -232,7 +235,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         return values;
     }
 
-     // Creating Tables
+    // Creating Tables
     @Override
     public void onCreate(SQLiteDatabase db) {
         createTables(db);
@@ -252,20 +255,20 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     public void createTables(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
-        createProductTable( db );
+        createProductTable(db);
         createChangesTable(db);
         createLocationTable(db);
-        createTaxTable( db );
+        createTaxTable(db);
         createCategoryTable(db);
     }
 
     public void createLocationTable(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
@@ -281,7 +284,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     public void createTaxTable(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
@@ -297,7 +300,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     public void createCategoryTable(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
@@ -313,12 +316,13 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     public void createChangesTable(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
         String CREATE_CHANGES_TABLE = "CREATE TABLE " + TABLE_CHANGES + "("
                 + CHANGES_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + CHANGES_BATCH + " TEXT,"
                 + CHANGES_PRODUCT + " TEXT,"
                 + CHANGES_TYPE + " INTEGER,"
                 + CHANGES_FIELD + " TEXT,"
@@ -329,11 +333,15 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
         db.execSQL(CREATE_CHANGES_TABLE);
 
+        // Regenerate the changes Batch ID
+        SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
+        SP.edit().remove("change_batch");
+        m_ChangeUID = getChangeBatch();
     }
 
     public void createProductTable(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
@@ -361,7 +369,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     public void dropTables(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
@@ -373,9 +381,9 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
     }
 
-    public void emptyTables( SQLiteDatabase db ) {
+    public void emptyTables(SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
@@ -412,18 +420,18 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         createCategoryTable(db);
     }
 
-    private void showToast( String Msg, int duration ) {
+    private void showToast(String Msg, int duration) {
         if (m_toaster != null) {
             m_toaster.cancel();
         }
 
-        m_toaster = Toast.makeText( m_Context, Msg, duration );
+        m_toaster = Toast.makeText(m_Context, Msg, duration);
         m_toaster.show();
     }
 
-    public void ReBuildProductTable( Context ctx,  SQLiteDatabase db ) {
+    public void ReBuildProductTable(Context ctx, SQLiteDatabase db) {
 
-        if( db == null ) {
+        if (db == null) {
             db = this.getWritableDatabase();
         }
 
@@ -438,27 +446,27 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
         SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
         String connection = SP.getString("database_url", null);
-        String user = SP.getString("database_user", null );
-        String pwd = SP.getString("database_password", null );
-        String location = SP.getString("location", null );
+        String user = SP.getString("database_user", null);
+        String pwd = SP.getString("database_password", null);
+        String location = SP.getString("location", null);
 
-        if( connection == null || user == null || pwd == null ) {
-            showToast ("Missing connection settings", Toast.LENGTH_LONG );
+        if (connection == null || user == null || pwd == null) {
+            showToast("Missing connection settings", Toast.LENGTH_LONG);
 
             bFetchingData = false;
 
             // Fire the settings activity
-            Intent intent = new Intent( ctx, SettingsActivity.class);
-            intent.addFlags( intent.FLAG_ACTIVITY_NEW_TASK );
-            m_Context.startActivity( intent );
+            Intent intent = new Intent(ctx, SettingsActivity.class);
+            intent.addFlags(intent.FLAG_ACTIVITY_NEW_TASK);
+            m_Context.startActivity(intent);
 
         } else {
-            DownloadStockData.startActionDownloadData( ctx, m_Receiver, connection, user, pwd, location);
+            DownloadStockData.startActionDownloadData(ctx, m_Receiver, connection, user, pwd, location);
         }
 
     }
 
-    public void testConnection( Context ctx  ) {
+    public void testConnection(Context ctx) {
 
         showToast("Testing connection", Toast.LENGTH_SHORT);
         SQLiteDatabase db = this.getWritableDatabase();
@@ -468,54 +476,54 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
 
         SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
-        String connection = SP.getString("database_url", null );
-        String user = SP.getString("database_user", null );
+        String connection = SP.getString("database_url", null);
+        String user = SP.getString("database_user", null);
         String pwd = SP.getString("database_password", null);
 
         DownloadStockData.startActionTestConnect(ctx, m_Receiver, connection, user, pwd);
     }
 
-    public void ReBuildProductTable( Context ctx  ) {
+    public void ReBuildProductTable(Context ctx) {
         ReBuildProductTable(ctx, null);
     }
 
-        @Override
+    @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
         int msgID = R.string.dbstatus_unknown;
         boolean bComplete = false;
 
-        if( resultCode == DownloadStockData.STATUS_DOWNLOAD_FINISHED ) {
+        if (resultCode == DownloadStockData.STATUS_DOWNLOAD_FINISHED) {
             // Need to notify all interested parties the DB content has changed
             msgID = R.string.dbstatus_download_complete;
             bComplete = true;
             bFetchingData = false;
-            NotifyDataChanged( CHANGENOTIFY_RESET, null );
-        } else if( resultCode == DownloadStockData.STATUS_CONNECTION_OK ) {
+            NotifyDataChanged(CHANGENOTIFY_RESET, null);
+        } else if (resultCode == DownloadStockData.STATUS_CONNECTION_OK) {
             msgID = R.string.dbstatus_connection_ok;
             bComplete = true;
-        } else if( resultCode == DownloadStockData.STATUS_ERROR ) {
+        } else if (resultCode == DownloadStockData.STATUS_ERROR) {
             msgID = R.string.dbstatus_communication_error;
             Log.e(TAG, "DB Communications failed " + resultData.toString());
             bComplete = true;
             bFetchingData = false;
-            NotifyDataChanged( CHANGENOTIFY_RESET, null );
-        } else if( resultCode == DownloadStockData.STATUS_RUNNING ) {
+            NotifyDataChanged(CHANGENOTIFY_RESET, null);
+        } else if (resultCode == DownloadStockData.STATUS_RUNNING) {
             bFetchingData = true;
             msgID = R.string.dbstatus_coomunicating;
         }
 
         String msg = m_Context.getResources().getString(msgID);
-            showToast(msg, Toast.LENGTH_LONG);
+        showToast(msg, Toast.LENGTH_LONG);
         NotifyDownloadProgress(msg, bComplete);
     }
 
     // Adding new location
-    public void addLocation( String chromisId, String name ) {
+    public void addLocation(String chromisId, String name) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put( LOCATION_CHROMISID, chromisId );
-        values.put( LOCATION_NAME, name );
+        values.put(LOCATION_CHROMISID, chromisId);
+        values.put(LOCATION_NAME, name);
 
         // Inserting Row
         db.insert(TABLE_LOCATIONS, null, values);
@@ -523,7 +531,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Adding new tax
-    public void addTax( String chromisId, String name ) {
+    public void addTax(String chromisId, String name) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
@@ -536,12 +544,12 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Adding new category
-    public void addCategory( String chromisId, String name ) {
+    public void addCategory(String chromisId, String name) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put( CATEGORY_CHROMISID, chromisId );
-        values.put( CATEGORY_NAME, name );
+        values.put(CATEGORY_CHROMISID, chromisId);
+        values.put(CATEGORY_NAME, name);
 
         // Inserting Row
         db.insert(TABLE_CATEGORIES, null, values);
@@ -549,64 +557,64 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Adding new product
-    public Long createProduct( Bundle values ) {
+    public Long createProduct(Bundle values) {
 
-        if( values == null ) {
+        if (values == null) {
             values = new Bundle();
         }
 
         SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
 
 
-        if( values.containsKey(StockProduct.CHROMISID) == false ) {
-            values.putString(StockProduct.CHROMISID, UUID.randomUUID().toString() );
+        if (values.containsKey(StockProduct.CHROMISID) == false) {
+            values.putString(StockProduct.CHROMISID, UUID.randomUUID().toString());
         }
-        if( values.containsKey(StockProduct.NAME) == false ) {
-            values.putString(StockProduct.NAME, "" );
+        if (values.containsKey(StockProduct.NAME) == false) {
+            values.putString(StockProduct.NAME, "");
         }
-        if( values.containsKey(StockProduct.LOCATION) == false ) {
-            values.putString(StockProduct.LOCATION, SP.getString("location", null) );
+        if (values.containsKey(StockProduct.LOCATION) == false) {
+            values.putString(StockProduct.LOCATION, SP.getString("location", null));
         }
-        if( values.containsKey(StockProduct.REFERENCE) == false ) {
-            values.putString(StockProduct.REFERENCE, "" );
+        if (values.containsKey(StockProduct.REFERENCE) == false) {
+            values.putString(StockProduct.REFERENCE, "");
         }
-        if( values.containsKey(StockProduct.CODE) == false ) {
-            values.putString(StockProduct.CODE, "" );
+        if (values.containsKey(StockProduct.CODE) == false) {
+            values.putString(StockProduct.CODE, "");
         }
-        if( values.containsKey(StockProduct.CATEGORY) == false ) {
-            values.putString(StockProduct.CATEGORY, "" );
+        if (values.containsKey(StockProduct.CATEGORY) == false) {
+            values.putString(StockProduct.CATEGORY, "");
         }
-        if( values.containsKey(StockProduct.PRICEBUY) == false ) {
+        if (values.containsKey(StockProduct.PRICEBUY) == false) {
             values.putDouble(StockProduct.PRICEBUY, (double) 0);
         }
-        if( values.containsKey(StockProduct.PRICESELL) == false ) {
-            values.putDouble(StockProduct.PRICESELL, (double) 0 );
+        if (values.containsKey(StockProduct.PRICESELL) == false) {
+            values.putDouble(StockProduct.PRICESELL, (double) 0);
         }
-        if( values.containsKey(StockProduct.QTY_INSTOCK) == false ) {
-            values.putDouble(StockProduct.QTY_INSTOCK, (double) 0 );
+        if (values.containsKey(StockProduct.QTY_INSTOCK) == false) {
+            values.putDouble(StockProduct.QTY_INSTOCK, (double) 0);
         }
-        if( values.containsKey(StockProduct.QTY_MAX) == false ) {
-            values.putDouble(StockProduct.QTY_MAX, (double) 0 );
+        if (values.containsKey(StockProduct.QTY_MAX) == false) {
+            values.putDouble(StockProduct.QTY_MAX, (double) 0);
         }
-        if( values.containsKey(StockProduct.QTY_MIN) == false ) {
-            values.putDouble(StockProduct.QTY_MIN, (double) 0 );
+        if (values.containsKey(StockProduct.QTY_MIN) == false) {
+            values.putDouble(StockProduct.QTY_MIN, (double) 0);
         }
 
-        StockProduct product = new StockProduct( values );
-        addProduct( product, false, false );
+        StockProduct product = new StockProduct(values);
+        addProduct(product, false, false);
 
         // Get the product ID for the new record
-       product = getProduct( product.getChromisId(), false );
+        product = getProduct(product.getChromisId(), false);
 
         // Add a stock level adjustment change
         addChange(product.getChromisId(), CHANGETYPE_NEWRECORD, StockProduct.ID, product.getID().toString(), "");
 
-        NotifyDataChanged( CHANGENOTIFY_NEWPRODUCT,  product.getChromisId() );
+        NotifyDataChanged(CHANGENOTIFY_NEWPRODUCT, product.getChromisId());
 
         return product.getID();
     }
 
-    public void addProduct(StockProduct product, boolean bKeepChanges, boolean bNoNotify ) {
+    public void addProduct(StockProduct product, boolean bKeepChanges, boolean bNoNotify) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         if (bKeepChanges) {
@@ -627,23 +635,23 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         if (!bNoNotify) {
 
             // Get the product ID for the new record
-            product = getProduct( chromisID, false );
+            product = getProduct(chromisID, false);
 
-            NotifyDataChanged( CHANGENOTIFY_NEWPRODUCT,  product.getChromisId() );
+            NotifyDataChanged(CHANGENOTIFY_NEWPRODUCT, product.getChromisId());
         }
     }
 
     // Getting single product by barcode
-    public StockProduct lookupBarcode( String barcode ) {
+    public StockProduct lookupBarcode(String barcode) {
         StockProduct product = null;
 
         SQLiteDatabase db = this.getReadableDatabase();
 
-        Cursor cursor = db.query(TABLE_PRODUCTS, m_ProductFields, StockProduct.CODE + "=?", new String[]{ barcode }, null, null, null, null);
+        Cursor cursor = db.query(TABLE_PRODUCTS, m_ProductFields, StockProduct.CODE + "=?", new String[]{barcode}, null, null, null, null);
 
         if (cursor != null) {
 
-            if( cursor.moveToFirst() ) {
+            if (cursor.moveToFirst()) {
                 product = new StockProduct(ProductFieldsToBundle(cursor));
             }
 
@@ -654,7 +662,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Getting single product by database ID
-    public StockProduct getProduct( Long id, boolean withChanges) {
+    public StockProduct getProduct(Long id, boolean withChanges) {
         StockProduct product = null;
 
         SQLiteDatabase db = this.getReadableDatabase();
@@ -663,14 +671,14 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
         if (cursor != null) {
 
-            if( cursor.moveToFirst() ) {
+            if (cursor.moveToFirst()) {
                 product = new StockProduct(ProductFieldsToBundle(cursor));
             }
 
             cursor.close();
 
-            if( withChanges && product != null ) {
-                applyChanges( product );
+            if (withChanges && product != null) {
+                applyChanges(product);
             }
         }
 
@@ -678,7 +686,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Getting single product by Chromis ID
-    public StockProduct getProduct( String id, boolean withChanges ) {
+    public StockProduct getProduct(String id, boolean withChanges) {
         StockProduct product = null;
 
         SQLiteDatabase db = this.getReadableDatabase();
@@ -687,14 +695,14 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
         if (cursor != null) {
 
-            if( cursor.moveToFirst() ) {
+            if (cursor.moveToFirst()) {
                 product = new StockProduct(ProductFieldsToBundle(cursor));
             }
 
             cursor.close();
 
-            if( withChanges && product != null ) {
-                applyChanges( product );
+            if (withChanges && product != null) {
+                applyChanges(product);
             }
         }
 
@@ -724,15 +732,15 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Getting a minimal set of product attributes for a product list view
-    public Cursor getProductListCursor( String Filter, String [] FilterArgs, String OrderBy ) {
+    public Cursor getProductListCursor(String Filter, String[] FilterArgs, String OrderBy) {
         Cursor cursor = null;
 
         try {
             SQLiteDatabase db = this.getReadableDatabase();
-            cursor = db.query(TABLE_PRODUCTS,  new String [] {StockProduct.ID},
+            cursor = db.query(TABLE_PRODUCTS, new String[]{StockProduct.ID},
                     Filter, FilterArgs, null, null, OrderBy, null);
 
-        } catch ( SQLiteException e) {
+        } catch (SQLiteException e) {
             Log.d(TAG, e.toString());
         }
 
@@ -740,13 +748,13 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Getting selected Products
-    public Cursor getProductCursor( String Filter, String [] FilterArgs, String OrderBy ) {
+    public Cursor getProductCursor(String Filter, String[] FilterArgs, String OrderBy) {
         Cursor cursor = null;
 
         try {
             SQLiteDatabase db = this.getReadableDatabase();
             cursor = db.query(TABLE_PRODUCTS, m_ProductFields, Filter, FilterArgs, null, null, OrderBy, null);
-        } catch ( SQLiteException e) {
+        } catch (SQLiteException e) {
             Log.d(TAG, e.toString());
         }
 
@@ -754,7 +762,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
     }
 
     // Getting All Products
-    public Cursor getProductCursor( ) {
+    public Cursor getProductCursor() {
 
         return (getProductCursor(null, null, null));
     }
@@ -788,7 +796,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         int ret = db.update(TABLE_PRODUCTS, values, StockProduct.ID + " = ?",
                 new String[]{id.toString()});
 
-        NotifyDataChanged( CHANGENOTIFY_CHANGEPRODUCT,   product.getChromisId() );
+        NotifyDataChanged(CHANGENOTIFY_CHANGEPRODUCT, product.getChromisId());
 
         return ret;
     }
@@ -802,7 +810,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         db.delete(TABLE_PRODUCTS, StockProduct.ID + " = ?",
                 new String[]{id.toString()});
 
-        NotifyDataChanged( CHANGENOTIFY_DELETPRODUCT,  product.getChromisId() );
+        NotifyDataChanged(CHANGENOTIFY_DELETPRODUCT, product.getChromisId());
 
     }
 
@@ -815,25 +823,41 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
                 new String[]{chromisID});
 
 
-        NotifyDataChanged( CHANGENOTIFY_DELETPRODUCT,  chromisID );
+        NotifyDataChanged(CHANGENOTIFY_DELETPRODUCT, chromisID);
 
     }
 
-    public boolean isNumberField( String field ) {
+    public boolean isNumberField(String field) {
 
-        if( TextUtils.isEmpty( field ) ) {
+        if (TextUtils.isEmpty(field)) {
             return false;
         }
 
-        if( field.compareTo( StockProduct.QTY_INSTOCK ) == 0 ||
-                field.compareTo( StockProduct.PRICEBUY ) == 0 ||
-                field.compareTo( StockProduct.QTY_MAX ) == 0 ||
-                field.compareTo( StockProduct.QTY_MIN ) == 0 ||
-                field.compareTo( StockProduct.PRICESELL ) == 0 ) {
+        if (field.compareTo(StockProduct.QTY_INSTOCK) == 0 ||
+                field.compareTo(StockProduct.PRICEBUY) == 0 ||
+                field.compareTo(StockProduct.QTY_MAX) == 0 ||
+                field.compareTo(StockProduct.QTY_MIN) == 0 ||
+                field.compareTo(StockProduct.PRICESELL) == 0) {
             return true;
         } else {
             return false;
         }
+    }
+
+    // Unique batch number for changes - regenerated each time the changes table is cleared
+    public String getChangeBatch() {
+        // Unique batch number for changes - regenerated each time the changes table is cleared
+        if(m_ChangeUID==null)
+        {
+            SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(m_Context);
+            m_ChangeUID = SP.getString("change_batch", null);
+            if (m_ChangeUID == null) {
+                m_ChangeUID = UUID.randomUUID().toString();
+                SP.edit().putString("change_batch", m_ChangeUID);
+            }
+        }
+
+        return m_ChangeUID;
     }
 
     // Add a stock level adjustment change
@@ -842,6 +866,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
+        values.put( CHANGES_BATCH, getChangeBatch() );
         values.put( CHANGES_PRODUCT, chromisID );
         values.put(CHANGES_TYPE, changeType );
         values.put(CHANGES_FIELD, field );
@@ -871,6 +896,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
+        values.put( CHANGES_BATCH, getChangeBatch() );
         values.put( CHANGES_PRODUCT, chromisID );
         values.put(CHANGES_TYPE, changeType );
         values.put(CHANGES_FIELD, field );
@@ -1073,6 +1099,7 @@ public class DatabaseHandler extends SQLiteOpenHelper implements DownloadResultR
 
     String[] m_ChangeFields = new String [] {
             CHANGES_ID,
+            CHANGES_BATCH,
             CHANGES_PRODUCT,
             CHANGES_TYPE,
             CHANGES_FIELD,

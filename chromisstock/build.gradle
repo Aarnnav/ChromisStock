@@ -6,9 +6,9 @@ android {
     defaultConfig {
         applicationId "com.app_software.chromisstock.chromisstock"
         targetSdkVersion 19
-        versionCode 7
-        versionName "1.3.2"
-        minSdkVersion 17
+        versionCode 8
+        versionName "1.3.3"
+        minSdkVersion 9
     }
     buildTypes {
         release {
