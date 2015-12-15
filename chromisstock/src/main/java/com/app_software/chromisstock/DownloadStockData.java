@@ -430,7 +430,7 @@ public class DownloadStockData extends IntentService {
             String query = "SELECT " +
                     "PRODUCTS.ID AS ID, STOCKLEVEL.LOCATION AS LOCATION, REFERENCE, NAME, CATEGORY, " +
                     "CODE, PRICEBUY, PRICESELL, TAXCAT, IMAGE, " +
-                    "SUM(STOCKCURRENT.UNITS) AS INSTOCK, " +
+                    "STOCKCURRENT.UNITS AS INSTOCK, " +
                     "COALESCE(STOCKLEVEL.STOCKSECURITY, 0) AS STOCKMINIMUM, " +
                     "COALESCE(STOCKLEVEL.STOCKMAXIMUM, 0) AS STOCKMAXIMUM " +
                     "FROM PRODUCTS " +
